@@ -17,7 +17,7 @@ class TicketCog(commands.Cog):
         embed = discord.Embed(
             title="📩 Central de Atendimento", 
             description="Precisa de ajuda? Clique no botão abaixo para abrir um ticket privado com a nossa equipe.", 
-            color=0x2b2d31
+            color=0xff0000
         )
         if data.get("ticket_image"):
             embed.set_image(url=data.get("ticket_image"))
@@ -34,7 +34,6 @@ class TicketMainView(discord.ui.View):
     async def open_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild = interaction.guild
         
-        # Evita spam de tickets (um por pessoa)
         channel_name = f"ticket-{interaction.user.name.lower()}"
         existing_channel = discord.utils.get(guild.text_channels, name=channel_name)
         if existing_channel:
@@ -44,7 +43,6 @@ class TicketMainView(discord.ui.View):
         data = load_data()
         category = guild.get_channel(data.get("ticket_category_id")) if data.get("ticket_category_id") else None
         
-        # Configura as permissões do canal de ticket
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
             interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True)
@@ -55,7 +53,7 @@ class TicketMainView(discord.ui.View):
         embed = discord.Embed(
             title="🎫 Ticket de Suporte", 
             description=f"Olá {interaction.user.mention}!\n\nDescreva seu problema ou dúvida. Nossa equipe responderá em breve.\nPara encerrar o atendimento, clique em **Fechar Ticket**.", 
-            color=0xffa500
+            color=0xff0000
         )
         view = TicketCloseView()
         await channel.send(content=f"{interaction.user.mention}", embed=embed, view=view)

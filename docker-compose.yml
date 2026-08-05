@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    environment:
+      - TOKEN=SEU_TOKEN_AQUI   # Substitua ou use variável de ambiente
+    volumes:
+      - ./data:/app/data       # Persistência do JSON
+    restart: unless-stopped

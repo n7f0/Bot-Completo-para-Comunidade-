@@ -1,27 +1,31 @@
-import logging
-from telegram.ext import Application, CommandHandler
+import discord
+from discord.ext import commands
+import os
+import asyncio
 from config import TOKEN
-from handlers.admin import admin_conversation_handler
-from handlers.registro import registro_conversation_handler
 
-# Configuração de logs
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
 
-def main():
-    # Cria a aplicação
-    application = Application.builder().token(TOKEN).build()
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-    # Adiciona os handlers de conversação
-    application.add_handler(admin_conversation_handler())
-    application.add_handler(registro_conversation_handler())
+@bot.event
+async def on_ready():
+    print(f"✅ Bot conectado como {bot.user}")
+    try:
+        await bot.tree.sync()
+        print("✅ Comandos sincronizados com o Discord")
+    except Exception as e:
+        print(f"❌ Erro ao sincronizar comandos: {e}")
 
-    # Inicia o bot
-    logger.info("Bot iniciado...")
-    application.run_polling()
+async def load_cogs():
+    await bot.load_extension("cogs.admin")
+    await bot.load_extension("cogs.registro")
+
+async def main():
+    await load_cogs()
+    await bot.start(TOKEN)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

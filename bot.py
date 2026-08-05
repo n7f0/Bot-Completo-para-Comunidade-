@@ -4,34 +4,35 @@ import os
 import asyncio
 import sys
 
-# Força o Python a não bufferizar a saída
 sys.stdout.reconfigure(line_buffering=True)
-
 from config import TOKEN
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
+class MeuBot(commands.Bot):
+    def __init__(self):
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.members = True # Necessário para o sistema de boas vindas
+        super().__init__(command_prefix="!", intents=intents)
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+    async def setup_hook(self):
+        print("🚀 Carregando extensões...", flush=True)
+        await self.load_extension("cogs.admin")
+        await self.load_extension("cogs.registro")
+        await self.load_extension("cogs.events")
+        await self.load_extension("cogs.ticket")
+        
+        # Sincroniza os comandos de barra (/)
+        try:
+            await self.tree.sync()
+            print("✅ Comandos de barra sincronizados!", flush=True)
+        except Exception as e:
+            print(f"❌ Erro ao sincronizar comandos: {e}", flush=True)
+
+bot = MeuBot()
 
 @bot.event
 async def on_ready():
-    print(f"✅ Bot conectado como {bot.user}", flush=True)
-    try:
-        await bot.tree.sync()
-        print("✅ Comandos sincronizados com o Discord", flush=True)
-    except Exception as e:
-        print(f"❌ Erro ao sincronizar comandos: {e}", flush=True)
-
-async def load_cogs():
-    await bot.load_extension("cogs.admin")
-    await bot.load_extension("cogs.registro")
-
-async def main():
-    print("🚀 Bot iniciando...", flush=True)
-    await load_cogs()
-    await bot.start(TOKEN)
+    print(f"✅ Bot totalmente conectado como {bot.user}", flush=True)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    bot.run(TOKEN)

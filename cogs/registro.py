@@ -15,9 +15,8 @@ class RegistroCog(commands.Cog):
             await interaction.response.send_message("❌ Nenhum cargo disponível para registro. Contate um administrador.", ephemeral=True)
             return
 
-        # Verifica se o bot tem permissão para gerenciar cargos
         if not interaction.guild.me.guild_permissions.manage_roles:
-            await interaction.response.send_message("❌ Eu não tenho permissão para gerenciar cargos. Peça a um admin para me dar a permissão `Gerenciar Cargos`.", ephemeral=True)
+            await interaction.response.send_message("❌ Eu não tenho permissão para gerenciar cargos.", ephemeral=True)
             return
 
         embed = discord.Embed(
@@ -67,14 +66,14 @@ class IdadeView(discord.ui.View):
 
         self.parent.age = select.values[0]
 
-        # Passo 2: selecionar cargos (múltiplos)
+        # Passo 2: selecionar cargos
         data = load_data()
         available_ids = data.get("available_roles", [])
         options = []
         for role_id in available_ids:
             role = interaction.guild.get_role(role_id)
             if role:
-                options.append(discord.SelectOption(label=role.name, value=str(role_id), default=False))
+                options.append(discord.SelectOption(label=role.name, value=str(role_id)))
 
         if not options:
             await interaction.response.send_message("❌ Nenhum cargo disponível para seleção.", ephemeral=True)
@@ -82,11 +81,10 @@ class IdadeView(discord.ui.View):
 
         embed = discord.Embed(
             title=f"**Passo 2: Escolha seus cargos**",
-            description=f"Idade selecionada: **{self.parent.age}**\nSelecione um ou mais cargos (máx. 10).",
+            description=f"Idade selecionada: **{self.parent.age}**\nSelecione um ou mais cargos.",
             color=0x00aaff
         )
         view = CargosView(self.user, self.parent)
-        # Max values = 10
         select_menu = discord.ui.Select(placeholder="Selecione os cargos...", options=options, max_values=min(10, len(options)))
         view.add_item(select_menu)
         await interaction.response.edit_message(embed=embed, view=view)
@@ -105,7 +103,6 @@ class CargosView(discord.ui.View):
 
         self.parent.selected_roles = [int(v) for v in select.values]
 
-        # Botão de finalizar
         embed = discord.Embed(
             title="✔️ Finalizar Registro",
             description=f"Idade: **{self.parent.age}**\nCargos selecionados: {len(self.parent.selected_roles)}",
@@ -147,7 +144,6 @@ class FinalizarView(discord.ui.View):
             else:
                 failed.append(f"ID {role_id} (não encontrado)")
 
-        # Mensagem final
         embed = discord.Embed(title="✅ Registro Concluído!", color=0x00ff00)
         if added:
             embed.add_field(name="Cargos atribuídos", value=", ".join(added), inline=False)

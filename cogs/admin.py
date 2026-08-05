@@ -9,7 +9,6 @@ class AdminCog(commands.Cog):
 
     @app_commands.command(name="paineladmin", description="Envia o painel de administração fixo no chat")
     async def paineladmin(self, interaction: discord.Interaction):
-        # Verifica se é admin do servidor
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas administradores do servidor podem fixar este painel.", ephemeral=True)
             return
@@ -23,25 +22,20 @@ class AdminCog(commands.Cog):
                 "Clique nos botões abaixo para configurar o servidor. "
                 "Para colocar as imagens nos painéis, clique em **📝 Textos e Imagens** e cole as URLs."
             ), 
-            color=0x2b2d31
+            color=0xff0000
         )
         
-        # Se já tiver uma imagem configurada, ele mostra no painel
         if data.get("admin_image"):
             embed.set_image(url=data.get("admin_image"))
 
         view = AdminMainView()
         
-        # Envia a mensagem fixa no canal
         await interaction.channel.send(embed=embed, view=view)
-        
-        # Responde à interação para o Discord não dar "Falha"
         await interaction.response.send_message("✅ Painel fixado no chat com sucesso! Você pode apagar esta mensagem temporária.", ephemeral=True)
 
 
 class AdminMainView(discord.ui.View):
     def __init__(self):
-        # timeout=None é o que garante que os botões funcionem para sempre, mesmo se o bot reiniciar
         super().__init__(timeout=None) 
 
     async def verificar_permissao(self, interaction: discord.Interaction):
@@ -77,7 +71,6 @@ class AdminMainView(discord.ui.View):
     @discord.ui.button(label="Textos e Imagens", style=discord.ButtonStyle.primary, emoji="📝", custom_id="btn_text_img")
     async def btn_text_img(self, interaction: discord.Interaction, button: discord.ui.Button):
         if await self.verificar_permissao(interaction):
-            # ABRE A JANELA PARA COLAR AS URLs DIRETO NO DISCORD
             await interaction.response.send_modal(TextImageModal())
 
     @discord.ui.button(label="Cargos Registro", style=discord.ButtonStyle.success, emoji="➕", custom_id="btn_add_reg")
@@ -89,9 +82,6 @@ class AdminMainView(discord.ui.View):
     async def btn_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         if await self.verificar_permissao(interaction):
             await interaction.response.send_message("Selecione a Categoria para criar os Tickets:", view=ChannelSelectView("ticket_category_id", channel_type=discord.ChannelType.category), ephemeral=True)
-
-
-# --- Views Secundárias Invisíveis (Só quem clica vê) ---
 
 class SingleRoleSelectView(discord.ui.View):
     def __init__(self, config_key):
@@ -137,42 +127,35 @@ class AddRegRoleView(discord.ui.View):
         else:
             await interaction.response.edit_message(content="⚠️ O cargo já está na lista de registro.", view=None)
 
-
-# --- Janela (Modal) onde você cola as URLs dentro do próprio Discord ---
 class TextImageModal(discord.ui.Modal, title="Colar URLs das Imagens"):
     def __init__(self):
         super().__init__()
         data = load_data()
         
-        # Campo 1: Texto
         self.welcome_txt = discord.ui.TextInput(
             label="Texto de Boas-Vindas (use {user})", 
             style=discord.TextStyle.paragraph, 
             default=data.get("welcome_text"), 
             required=False
         )
-        # Campo 2: Imagem Boas Vindas
         self.welcome_img = discord.ui.TextInput(
             label="Link da Imagem de Boas-Vindas (URL)", 
             placeholder="https://exemplo.com/imagem.png",
             default=data.get("welcome_image"), 
             required=False
         )
-        # Campo 3: Imagem Admin
         self.admin_img = discord.ui.TextInput(
             label="Link da Imagem do Painel Admin (URL)", 
             placeholder="https://exemplo.com/imagem.png",
             default=data.get("admin_image"), 
             required=False
         )
-        # Campo 4: Imagem Registro
         self.reg_img = discord.ui.TextInput(
             label="Link da Imagem do Painel Registro (URL)", 
             placeholder="https://exemplo.com/imagem.png",
             default=data.get("reg_image"), 
             required=False
         )
-        # Campo 5: Imagem Ticket
         self.ticket_img = discord.ui.TextInput(
             label="Link da Imagem do Painel Ticket (URL)", 
             placeholder="https://exemplo.com/imagem.png",
@@ -201,7 +184,6 @@ class TextImageModal(discord.ui.Modal, title="Colar URLs das Imagens"):
             ephemeral=True
         )
 
-# O setup registra a View para os botões não pararem de funcionar quando o bot reiniciar
 async def setup(bot):
     bot.add_view(AdminMainView()) 
     await bot.add_cog(AdminCog(bot))

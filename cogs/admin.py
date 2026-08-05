@@ -7,176 +7,201 @@ class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="paineladmin", description="Abre o painel de administração")
+    @app_commands.command(name="paineladmin", description="Envia o painel de administração fixo no chat")
     async def paineladmin(self, interaction: discord.Interaction):
+        # Verifica se é admin do servidor
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Apenas administradores do servidor podem fixar este painel.", ephemeral=True)
+            return
+
         data = load_data()
-        admin_role_id = data.get("admin_role_id")
+        embed = discord.Embed(
+            title="⚙️ Painel Central de Administração", 
+            description=(
+                "Bem-vindo ao painel de controle do Bot!\n\n"
+                "**Como usar:**\n"
+                "Clique nos botões abaixo para configurar o servidor. "
+                "Para colocar as imagens nos painéis, clique em **📝 Textos e Imagens** e cole as URLs."
+            ), 
+            color=0x2b2d31
+        )
+        
+        # Se já tiver uma imagem configurada, ele mostra no painel
+        if data.get("admin_image"):
+            embed.set_image(url=data.get("admin_image"))
 
-        # Verifica permissões: quem tem o cargo admin ou é Administrador do servidor
-        if admin_role_id:
-            role = interaction.guild.get_role(admin_role_id)
-            if not role or role not in interaction.user.roles:
-                if not interaction.user.guild_permissions.administrator:
-                    await interaction.response.send_message("❌ Você não tem permissão para usar este comando.", ephemeral=True)
-                    return
-        else:
-            if not interaction.user.guild_permissions.administrator:
-                await interaction.response.send_message("❌ Você não tem permissão para usar este comando.", ephemeral=True)
-                return
+        view = AdminMainView()
+        
+        # Envia a mensagem fixa no canal
+        await interaction.channel.send(embed=embed, view=view)
+        
+        # Responde à interação para o Discord não dar "Falha"
+        await interaction.response.send_message("✅ Painel fixado no chat com sucesso! Você pode apagar esta mensagem temporária.", ephemeral=True)
 
-        # Mostra o menu principal
-        view = AdminView(interaction.user)
-        embed = discord.Embed(title="🔧 Painel de Administração", description="Selecione uma opção abaixo:", color=0x00ff00)
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-class AdminView(discord.ui.View):
-    def __init__(self, user):
-        super().__init__(timeout=120)
-        self.user = user
+class AdminMainView(discord.ui.View):
+    def __init__(self):
+        # timeout=None é o que garante que os botões funcionem para sempre, mesmo se o bot reiniciar
+        super().__init__(timeout=None) 
 
-    @discord.ui.select(
-        placeholder="Escolha uma ação...",
-        options=[
-            discord.SelectOption(label="👥 Definir Cargo Admin", value="set_admin"),
-            discord.SelectOption(label="➕ Adicionar Cargo para Registro", value="add_role"),
-            discord.SelectOption(label="➖ Remover Cargo para Registro", value="remove_role"),
-            discord.SelectOption(label="📋 Ver Configurações", value="view"),
-            discord.SelectOption(label="❌ Fechar", value="close")
-        ]
-    )
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        if interaction.user != self.user:
-            await interaction.response.send_message("❌ Você não pode interagir com este painel.", ephemeral=True)
-            return
-
-        value = select.values[0]
+    async def verificar_permissao(self, interaction: discord.Interaction):
         data = load_data()
+        admin_id = data.get("admin_role_id")
+        tem_permissao = interaction.user.guild_permissions.administrator
+        
+        if admin_id and not tem_permissao:
+            role = interaction.guild.get_role(admin_id)
+            if role and role in interaction.user.roles:
+                tem_permissao = True
+                
+        if not tem_permissao:
+            await interaction.response.send_message("❌ Você não tem permissão para usar estes botões.", ephemeral=True)
+            return False
+        return True
 
-        if value == "close":
-            await interaction.response.edit_message(content="✅ Painel fechado.", embed=None, view=None)
-            return
+    @discord.ui.button(label="Cargo Admin", style=discord.ButtonStyle.secondary, emoji="👥", custom_id="btn_admin_role")
+    async def btn_admin(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            await interaction.response.send_message("Selecione o Cargo de Administrador do Bot:", view=SingleRoleSelectView("admin_role_id"), ephemeral=True)
 
-        elif value == "set_admin":
-            # Abre o menu nativo de seleção de cargos do Discord
-            view = SetAdminRoleView(self.user)
-            await interaction.response.edit_message(content="Selecione abaixo o cargo que terá permissão para usar o `/paineladmin`:", embed=None, view=view)
+    @discord.ui.button(label="Cargo Automático", style=discord.ButtonStyle.secondary, emoji="📥", custom_id="btn_autorole")
+    async def btn_autorole(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            await interaction.response.send_message("Selecione o Cargo Automático (Autorole):", view=SingleRoleSelectView("autorole_id"), ephemeral=True)
 
-        elif value == "add_role":
-            # Abre o menu nativo de seleção de cargos do Discord para adicionar ao registro
-            view = AddRoleSelectView(self.user)
-            await interaction.response.edit_message(content="Selecione abaixo o cargo que os membros poderão escolher no registro:", embed=None, view=view)
+    @discord.ui.button(label="Canal Boas-Vindas", style=discord.ButtonStyle.secondary, emoji="👋", custom_id="btn_welcome")
+    async def btn_welcome(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            await interaction.response.send_message("Selecione o Canal de Boas-Vindas:", view=ChannelSelectView("welcome_channel_id"), ephemeral=True)
 
-        elif value == "remove_role":
-            available = data.get("available_roles", [])
-            if not available:
-                await interaction.response.send_message("❌ Nenhum cargo registrado no sistema para remover.", ephemeral=True)
-                return
+    @discord.ui.button(label="Textos e Imagens", style=discord.ButtonStyle.primary, emoji="📝", custom_id="btn_text_img")
+    async def btn_text_img(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            # ABRE A JANELA PARA COLAR AS URLs DIRETO NO DISCORD
+            await interaction.response.send_modal(TextImageModal())
 
-            options = []
-            for role_id in available:
-                role = interaction.guild.get_role(role_id)
-                if role:
-                    options.append(discord.SelectOption(label=role.name, value=str(role_id)))
+    @discord.ui.button(label="Cargos Registro", style=discord.ButtonStyle.success, emoji="➕", custom_id="btn_add_reg")
+    async def btn_add_reg(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            await interaction.response.send_message("Selecione o cargo para ADICIONAR ao painel de registro:", view=AddRegRoleView(), ephemeral=True)
 
-            if not options:
-                await interaction.response.send_message("❌ Nenhum cargo válido para remover.", ephemeral=True)
-                return
+    @discord.ui.button(label="Configurar Ticket", style=discord.ButtonStyle.primary, emoji="🎫", custom_id="btn_ticket")
+    async def btn_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            await interaction.response.send_message("Selecione a Categoria para criar os Tickets:", view=ChannelSelectView("ticket_category_id", channel_type=discord.ChannelType.category), ephemeral=True)
 
-            view = RemoveRoleView(self.user, options)
-            await interaction.response.edit_message(content="Selecione o cargo que deseja REMOVER do registro:", embed=None, view=view)
 
-        elif value == "view":
-            admin_role_id = data.get("admin_role_id")
-            admin_role = interaction.guild.get_role(admin_role_id) if admin_role_id else None
-            
-            available = data.get("available_roles", [])
-            roles_names = []
-            for rid in available:
-                r = interaction.guild.get_role(rid)
-                roles_names.append(r.name if r else f"ID {rid} (não encontrado)")
+# --- Views Secundárias Invisíveis (Só quem clica vê) ---
 
-            embed = discord.Embed(title="📋 Configurações Atuais", color=0x00aaff)
-            embed.add_field(name="Cargo Administrador do Painel", value=admin_role.mention if admin_role else "Nenhum definido (Somente Admins do servidor)", inline=False)
-            embed.add_field(name="Cargos disponíveis no Registro", value=", ".join(roles_names) if roles_names else "Nenhum cargo adicionado", inline=False)
-            
-            await interaction.response.edit_message(content=None, embed=embed, view=self)
-
-# --- VIEWS SECUNDÁRIAS ---
-
-class SetAdminRoleView(discord.ui.View):
-    def __init__(self, user):
+class SingleRoleSelectView(discord.ui.View):
+    def __init__(self, config_key):
         super().__init__(timeout=120)
-        self.user = user
+        self.config_key = config_key
 
-    # Menu Select Nativo de Cargos (RoleSelect)
-    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo admin aqui...")
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
-        if interaction.user != self.user:
-            await interaction.response.send_message("❌ Apenas quem abriu o menu pode interagir.", ephemeral=True)
-            return
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Escolha o cargo aqui...")
+    async def callback(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
+        data = load_data()
+        data[self.config_key] = select.values[0].id
+        save_data(data)
+        await interaction.response.edit_message(content=f"✅ Configuração salva: {select.values[0].mention}", view=None)
 
+class ChannelSelectView(discord.ui.View):
+    def __init__(self, config_key, channel_type=discord.ChannelType.text):
+        super().__init__(timeout=120)
+        self.config_key = config_key
+        self.add_item(ChannelSelectComponent(config_key, channel_type))
+
+class ChannelSelectComponent(discord.ui.ChannelSelect):
+    def __init__(self, config_key, channel_type):
+        super().__init__(placeholder="Escolha o canal/categoria...", channel_types=[channel_type])
+        self.config_key = config_key
+
+    async def callback(self, interaction: discord.Interaction):
+        data = load_data()
+        data[self.config_key] = self.values[0].id
+        save_data(data)
+        await interaction.response.edit_message(content=f"✅ Configuração salva: {self.values[0].mention}", view=None)
+
+class AddRegRoleView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=120)
+
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo...")
+    async def callback(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
         role = select.values[0]
         data = load_data()
-        data["admin_role_id"] = role.id
-        save_data(data)
-        await interaction.response.edit_message(content=f"✅ O cargo {role.mention} foi definido como Admin do Bot com sucesso!", embed=None, view=None)
-
-
-class AddRoleSelectView(discord.ui.View):
-    def __init__(self, user):
-        super().__init__(timeout=120)
-        self.user = user
-
-    # Menu Select Nativo de Cargos (RoleSelect)
-    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo para adicionar ao registro...")
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
-        if interaction.user != self.user:
-            await interaction.response.send_message("❌ Apenas quem abriu o menu pode interagir.", ephemeral=True)
-            return
-
-        role = select.values[0]
-        
-        # Bloqueia adicionar cargos de bot ou everyone por segurança
-        if role.is_default() or role.is_integration() or role.is_bot_managed():
-            await interaction.response.edit_message(content="❌ Você não pode adicionar cargos de bot, integração ou @everyone no registro.", embed=None, view=None)
-            return
-
-        data = load_data()
-        if role.id in data.get("available_roles", []):
-            await interaction.response.edit_message(content=f"⚠️ O cargo {role.mention} já está na lista de registro.", embed=None, view=None)
-            return
-
-        # Adiciona o ID do cargo escolhido e salva
-        data.setdefault("available_roles", []).append(role.id)
-        save_data(data)
-        await interaction.response.edit_message(content=f"✅ O cargo {role.mention} foi **adicionado** à lista de registros para os usuários!", embed=None, view=None)
-
-
-class RemoveRoleView(discord.ui.View):
-    def __init__(self, user, options):
-        super().__init__(timeout=120)
-        self.user = user
-        
-        # Cria o select de remoção construindo com as opções passadas
-        select = discord.ui.Select(placeholder="Selecione qual cargo remover...", options=options)
-        select.callback = self.select_callback
-        self.add_item(select)
-
-    async def select_callback(self, interaction: discord.Interaction):
-        if interaction.user != self.user:
-            await interaction.response.send_message("❌ Apenas quem abriu o menu pode interagir.", ephemeral=True)
-            return
-
-        # Pega o valor do menu (ID em formato string)
-        role_id = int(interaction.data["values"][0])
-        data = load_data()
-        
-        if role_id in data["available_roles"]:
-            data["available_roles"].remove(role_id)
+        if role.id not in data.get("available_roles", []):
+            data.setdefault("available_roles", []).append(role.id)
             save_data(data)
-            await interaction.response.edit_message(content="✅ Cargo **removido** da lista de registro com sucesso.", embed=None, view=None)
+            await interaction.response.edit_message(content=f"✅ Cargo {role.mention} adicionado ao /painelreg!", view=None)
         else:
-            await interaction.response.edit_message(content="❌ Este cargo não foi encontrado na lista.", embed=None, view=None)
+            await interaction.response.edit_message(content="⚠️ O cargo já está na lista de registro.", view=None)
 
+
+# --- Janela (Modal) onde você cola as URLs dentro do próprio Discord ---
+class TextImageModal(discord.ui.Modal, title="Colar URLs das Imagens"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        
+        # Campo 1: Texto
+        self.welcome_txt = discord.ui.TextInput(
+            label="Texto de Boas-Vindas (use {user})", 
+            style=discord.TextStyle.paragraph, 
+            default=data.get("welcome_text"), 
+            required=False
+        )
+        # Campo 2: Imagem Boas Vindas
+        self.welcome_img = discord.ui.TextInput(
+            label="Link da Imagem de Boas-Vindas (URL)", 
+            placeholder="https://exemplo.com/imagem.png",
+            default=data.get("welcome_image"), 
+            required=False
+        )
+        # Campo 3: Imagem Admin
+        self.admin_img = discord.ui.TextInput(
+            label="Link da Imagem do Painel Admin (URL)", 
+            placeholder="https://exemplo.com/imagem.png",
+            default=data.get("admin_image"), 
+            required=False
+        )
+        # Campo 4: Imagem Registro
+        self.reg_img = discord.ui.TextInput(
+            label="Link da Imagem do Painel Registro (URL)", 
+            placeholder="https://exemplo.com/imagem.png",
+            default=data.get("reg_image"), 
+            required=False
+        )
+        # Campo 5: Imagem Ticket
+        self.ticket_img = discord.ui.TextInput(
+            label="Link da Imagem do Painel Ticket (URL)", 
+            placeholder="https://exemplo.com/imagem.png",
+            default=data.get("ticket_image"), 
+            required=False
+        )
+        
+        self.add_item(self.welcome_txt)
+        self.add_item(self.welcome_img)
+        self.add_item(self.admin_img)
+        self.add_item(self.reg_img)
+        self.add_item(self.ticket_img)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data()
+        data["welcome_text"] = self.welcome_txt.value
+        data["welcome_image"] = self.welcome_img.value
+        data["admin_image"] = self.admin_img.value
+        data["reg_image"] = self.reg_img.value
+        data["ticket_image"] = self.ticket_img.value
+        save_data(data)
+        
+        await interaction.response.send_message(
+            "✅ Textos e Imagens salvos no banco de dados com sucesso!\n"
+            "*(Obs: Se você alterou a imagem de um painel, apague o painel antigo no chat e digite o comando novamente para ele aparecer com a imagem nova)*", 
+            ephemeral=True
+        )
+
+# O setup registra a View para os botões não pararem de funcionar quando o bot reiniciar
 async def setup(bot):
+    bot.add_view(AdminMainView()) 
     await bot.add_cog(AdminCog(bot))

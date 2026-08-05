@@ -15,13 +15,16 @@ def load_data():
             "reg_image": "",
             "ticket_image": "",
             
-            # 4 Categorias de Ticket
+            # Cargos de Idade
+            "role_16": None,
+            "role_18": None,
+            "role_25": None,
+            
+            # Categorias e Nomes de Ticket
             "ticket_cat_denuncia": None,
             "ticket_cat_parceria": None,
             "ticket_cat_compra": None,
             "ticket_cat_duvida": None,
-            
-            # Nomes personalizáveis dos 4 Botões
             "ticket_name_denuncia": "🚨 Denúncias",
             "ticket_name_parceria": "🤝 Parcerias",
             "ticket_name_compra": "🛒 Compras",

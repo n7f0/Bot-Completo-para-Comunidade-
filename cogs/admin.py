@@ -12,18 +12,19 @@ class AdminCog(commands.Cog):
         data = load_data()
         admin_role_id = data.get("admin_role_id")
 
-        # Verifica permissões
+        # Verifica permissões: quem tem o cargo admin ou é Administrador do servidor
         if admin_role_id:
             role = interaction.guild.get_role(admin_role_id)
             if not role or role not in interaction.user.roles:
-                await interaction.response.send_message("❌ Você não tem permissão para usar este comando.", ephemeral=True)
-                return
+                if not interaction.user.guild_permissions.administrator:
+                    await interaction.response.send_message("❌ Você não tem permissão para usar este comando.", ephemeral=True)
+                    return
         else:
             if not interaction.user.guild_permissions.administrator:
                 await interaction.response.send_message("❌ Você não tem permissão para usar este comando.", ephemeral=True)
                 return
 
-        # Mostra o menu
+        # Mostra o menu principal
         view = AdminView(interaction.user)
         embed = discord.Embed(title="🔧 Painel de Administração", description="Selecione uma opção abaixo:", color=0x00ff00)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
@@ -44,7 +45,6 @@ class AdminView(discord.ui.View):
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        # Verifica se é o mesmo usuário
         if interaction.user != self.user:
             await interaction.response.send_message("❌ Você não pode interagir com este painel.", ephemeral=True)
             return
@@ -53,35 +53,23 @@ class AdminView(discord.ui.View):
         data = load_data()
 
         if value == "close":
-            await interaction.response.edit_message(content="Painel fechado.", embed=None, view=None)
+            await interaction.response.edit_message(content="✅ Painel fechado.", embed=None, view=None)
             return
 
         elif value == "set_admin":
-            # Mostra lista de cargos para escolher
-            roles = [r for r in interaction.guild.roles if r.name != "@everyone"]
-            if not roles:
-                await interaction.response.send_message("❌ Nenhum cargo disponível no servidor.", ephemeral=True)
-                return
-
-            # Cria um novo view com select
-            view = SetAdminView(self.user)
-            options = []
-            for r in roles[:25]:  # Limite de 25 opções
-                options.append(discord.SelectOption(label=r.name, value=str(r.id)))
-            
-            select_menu = discord.ui.Select(placeholder="Selecione o cargo admin...", options=options)
-            view.add_item(select_menu)
-            await interaction.response.edit_message(content="Escolha o cargo que terá acesso ao /paineladmin:", embed=None, view=view)
+            # Abre o menu nativo de seleção de cargos do Discord
+            view = SetAdminRoleView(self.user)
+            await interaction.response.edit_message(content="Selecione abaixo o cargo que terá permissão para usar o `/paineladmin`:", embed=None, view=view)
 
         elif value == "add_role":
-            # Usa modal para entrada de texto
-            modal = AddRoleModal()
-            await interaction.response.send_modal(modal)
+            # Abre o menu nativo de seleção de cargos do Discord para adicionar ao registro
+            view = AddRoleSelectView(self.user)
+            await interaction.response.edit_message(content="Selecione abaixo o cargo que os membros poderão escolher no registro:", embed=None, view=view)
 
         elif value == "remove_role":
             available = data.get("available_roles", [])
             if not available:
-                await interaction.response.send_message("❌ Nenhum cargo disponível para remover.", ephemeral=True)
+                await interaction.response.send_message("❌ Nenhum cargo registrado no sistema para remover.", ephemeral=True)
                 return
 
             options = []
@@ -94,14 +82,13 @@ class AdminView(discord.ui.View):
                 await interaction.response.send_message("❌ Nenhum cargo válido para remover.", ephemeral=True)
                 return
 
-            view = RemoveRoleView(self.user)
-            select_menu = discord.ui.Select(placeholder="Selecione o cargo para remover...", options=options)
-            view.add_item(select_menu)
-            await interaction.response.edit_message(content="Selecione o cargo a ser removido:", embed=None, view=view)
+            view = RemoveRoleView(self.user, options)
+            await interaction.response.edit_message(content="Selecione o cargo que deseja REMOVER do registro:", embed=None, view=view)
 
         elif value == "view":
             admin_role_id = data.get("admin_role_id")
             admin_role = interaction.guild.get_role(admin_role_id) if admin_role_id else None
+            
             available = data.get("available_roles", [])
             roles_names = []
             for rid in available:
@@ -109,75 +96,87 @@ class AdminView(discord.ui.View):
                 roles_names.append(r.name if r else f"ID {rid} (não encontrado)")
 
             embed = discord.Embed(title="📋 Configurações Atuais", color=0x00aaff)
-            embed.add_field(name="Cargo Admin", value=admin_role.mention if admin_role else "Nenhum definido", inline=False)
-            embed.add_field(name="Cargos para Registro", value=", ".join(roles_names) if roles_names else "Nenhum", inline=False)
-            await interaction.response.edit_message(embed=embed, view=self)
+            embed.add_field(name="Cargo Administrador do Painel", value=admin_role.mention if admin_role else "Nenhum definido (Somente Admins do servidor)", inline=False)
+            embed.add_field(name="Cargos disponíveis no Registro", value=", ".join(roles_names) if roles_names else "Nenhum cargo adicionado", inline=False)
+            
+            await interaction.response.edit_message(content=None, embed=embed, view=self)
 
-class SetAdminView(discord.ui.View):
+# --- VIEWS SECUNDÁRIAS ---
+
+class SetAdminRoleView(discord.ui.View):
     def __init__(self, user):
         super().__init__(timeout=120)
         self.user = user
 
-    @discord.ui.select(placeholder="Selecione o cargo admin...")
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
+    # Menu Select Nativo de Cargos (RoleSelect)
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo admin aqui...")
+    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Você não pode interagir com este painel.", ephemeral=True)
+            await interaction.response.send_message("❌ Apenas quem abriu o menu pode interagir.", ephemeral=True)
             return
 
-        role_id = int(select.values[0])
+        role = select.values[0]
         data = load_data()
-        data["admin_role_id"] = role_id
+        data["admin_role_id"] = role.id
         save_data(data)
-        role = interaction.guild.get_role(role_id)
-        await interaction.response.edit_message(content=f"✅ Cargo admin definido como {role.mention}", embed=None, view=None)
+        await interaction.response.edit_message(content=f"✅ O cargo {role.mention} foi definido como Admin do Bot com sucesso!", embed=None, view=None)
+
+
+class AddRoleSelectView(discord.ui.View):
+    def __init__(self, user):
+        super().__init__(timeout=120)
+        self.user = user
+
+    # Menu Select Nativo de Cargos (RoleSelect)
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo para adicionar ao registro...")
+    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.RoleSelect):
+        if interaction.user != self.user:
+            await interaction.response.send_message("❌ Apenas quem abriu o menu pode interagir.", ephemeral=True)
+            return
+
+        role = select.values[0]
+        
+        # Bloqueia adicionar cargos de bot ou everyone por segurança
+        if role.is_default() or role.is_integration() or role.is_bot_managed():
+            await interaction.response.edit_message(content="❌ Você não pode adicionar cargos de bot, integração ou @everyone no registro.", embed=None, view=None)
+            return
+
+        data = load_data()
+        if role.id in data.get("available_roles", []):
+            await interaction.response.edit_message(content=f"⚠️ O cargo {role.mention} já está na lista de registro.", embed=None, view=None)
+            return
+
+        # Adiciona o ID do cargo escolhido e salva
+        data.setdefault("available_roles", []).append(role.id)
+        save_data(data)
+        await interaction.response.edit_message(content=f"✅ O cargo {role.mention} foi **adicionado** à lista de registros para os usuários!", embed=None, view=None)
+
 
 class RemoveRoleView(discord.ui.View):
-    def __init__(self, user):
+    def __init__(self, user, options):
         super().__init__(timeout=120)
         self.user = user
+        
+        # Cria o select de remoção construindo com as opções passadas
+        select = discord.ui.Select(placeholder="Selecione qual cargo remover...", options=options)
+        select.callback = self.select_callback
+        self.add_item(select)
 
-    @discord.ui.select(placeholder="Selecione o cargo para remover...")
-    async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
+    async def select_callback(self, interaction: discord.Interaction):
         if interaction.user != self.user:
-            await interaction.response.send_message("❌ Você não pode interagir com este painel.", ephemeral=True)
+            await interaction.response.send_message("❌ Apenas quem abriu o menu pode interagir.", ephemeral=True)
             return
 
-        role_id = int(select.values[0])
+        # Pega o valor do menu (ID em formato string)
+        role_id = int(interaction.data["values"][0])
         data = load_data()
+        
         if role_id in data["available_roles"]:
             data["available_roles"].remove(role_id)
             save_data(data)
-            await interaction.response.edit_message(content="✅ Cargo removido da lista de registro.", embed=None, view=None)
+            await interaction.response.edit_message(content="✅ Cargo **removido** da lista de registro com sucesso.", embed=None, view=None)
         else:
-            await interaction.response.edit_message(content="❌ Cargo não encontrado na lista.", embed=None, view=None)
-
-class AddRoleModal(discord.ui.Modal, title="Adicionar Cargo para Registro"):
-    role_id_input = discord.ui.TextInput(
-        label="ID do Cargo",
-        placeholder="Cole o ID numérico do cargo aqui...",
-        required=True
-    )
-
-    async def on_submit(self, interaction: discord.Interaction):
-        try:
-            role_id = int(self.role_id_input.value)
-        except ValueError:
-            await interaction.response.send_message("❌ ID inválido. Insira apenas números.", ephemeral=True)
-            return
-
-        role = interaction.guild.get_role(role_id)
-        if not role:
-            await interaction.response.send_message("❌ Cargo não encontrado no servidor.", ephemeral=True)
-            return
-
-        data = load_data()
-        if role_id in data.get("available_roles", []):
-            await interaction.response.send_message("⚠️ Este cargo já está na lista.", ephemeral=True)
-            return
-
-        data["available_roles"].append(role_id)
-        save_data(data)
-        await interaction.response.send_message(f"✅ Cargo {role.mention} adicionado à lista de registro.", ephemeral=True)
+            await interaction.response.edit_message(content="❌ Este cargo não foi encontrado na lista.", embed=None, view=None)
 
 async def setup(bot):
     await bot.add_cog(AdminCog(bot))

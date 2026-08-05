@@ -14,8 +14,18 @@ def load_data():
             "admin_image": "",
             "reg_image": "",
             "ticket_image": "",
-            "ticket_category_id": None,
-            "ticket_role_id": None
+            
+            # 4 Categorias de Ticket
+            "ticket_cat_denuncia": None,
+            "ticket_cat_parceria": None,
+            "ticket_cat_compra": None,
+            "ticket_cat_duvida": None,
+            
+            # Nomes personalizáveis dos 4 Botões
+            "ticket_name_denuncia": "🚨 Denúncias",
+            "ticket_name_parceria": "🤝 Parcerias",
+            "ticket_name_compra": "🛒 Compras",
+            "ticket_name_duvida": "❓ Dúvidas"
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

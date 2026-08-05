@@ -4,7 +4,7 @@ services:
   bot:
     build: .
     environment:
-      - TOKEN=SEU_TOKEN_AQUI   # Substitua ou use variável de ambiente
+      - DISCORD_TOKEN=SEU_TOKEN_DISCORD_AQUI
     volumes:
-      - ./data:/app/data       # Persistência do JSON
+      - ./data:/app/data
     restart: unless-stopped

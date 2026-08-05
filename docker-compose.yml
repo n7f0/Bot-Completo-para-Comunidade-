@@ -3,8 +3,8 @@ version: '3.8'
 services:
   bot:
     build: .
-    env_file:
-      - stack.env
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}   # ← Referência à variável do Portainer
     volumes:
       - ./data:/app/data
     restart: unless-stopped

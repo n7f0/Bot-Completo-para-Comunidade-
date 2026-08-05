@@ -17,7 +17,7 @@ class RegistroCog(commands.Cog):
         embed = discord.Embed(
             title="📋 Painel de Registro",
             description="Clique no botão abaixo para iniciar seu registro em nosso servidor.",
-            color=0x00ff00
+            color=0xff0000
         )
         if data.get("reg_image"):
             embed.set_image(url=data.get("reg_image"))
@@ -32,8 +32,7 @@ class BotaoRegistroPersistente(discord.ui.View):
 
     @discord.ui.button(label="🚀 Iniciar Registro", style=discord.ButtonStyle.primary, custom_id="btn_start_registro")
     async def iniciar(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Abre o processo de registro invisível só para o usuário
-        embed = discord.Embed(title="**Passo 1: Escolha sua idade**", color=0x00aaff)
+        embed = discord.Embed(title="**Passo 1: Escolha sua idade**", color=0xff0000)
         view = IdadeView(interaction.user)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
@@ -62,7 +61,7 @@ class IdadeView(discord.ui.View):
             await interaction.response.edit_message(content="❌ Nenhum cargo disponível para seleção no momento.", embed=None, view=None)
             return
 
-        embed = discord.Embed(title="**Passo 2: Escolha seus cargos**", description=f"Idade: **{age}**", color=0x00aaff)
+        embed = discord.Embed(title="**Passo 2: Escolha seus cargos**", description=f"Idade: **{age}**", color=0xff0000)
         view = CargosView(age)
         select_menu = discord.ui.Select(placeholder="Selecione os cargos...", options=options, max_values=min(10, len(options)))
         select_menu.callback = view.select_callback
@@ -86,7 +85,7 @@ class CargosView(discord.ui.View):
                 try: await member.add_roles(role, reason="Registro via bot")
                 except: pass
 
-        embed = discord.Embed(title="✅ Registro Concluído!", description="Cargos entregues com sucesso.", color=0x00ff00)
+        embed = discord.Embed(title="✅ Registro Concluído!", description="Cargos entregues com sucesso.", color=0xff0000)
         await interaction.response.edit_message(embed=embed, view=None)
 
 async def setup(bot):

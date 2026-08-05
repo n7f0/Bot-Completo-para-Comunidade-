@@ -72,6 +72,12 @@ class AdminMainView(discord.ui.View):
         if await self.verificar_permissao(interaction):
             await interaction.response.send_modal(TextImageModal())
 
+    @discord.ui.button(label="Cargos Idade", style=discord.ButtonStyle.success, emoji="🎂", custom_id="btn_age_roles")
+    async def btn_age_roles(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if await self.verificar_permissao(interaction):
+            # NOVO MENU DE IDADES
+            await interaction.response.send_message("⚙️ **Configuração de Idades**\nEscolha qual cargo deseja definir:", view=AgesConfigView(), ephemeral=True)
+
     @discord.ui.button(label="Cargos Registro", style=discord.ButtonStyle.success, emoji="➕", custom_id="btn_add_reg")
     async def btn_add_reg(self, interaction: discord.Interaction, button: discord.ui.Button):
         if await self.verificar_permissao(interaction):
@@ -80,10 +86,28 @@ class AdminMainView(discord.ui.View):
     @discord.ui.button(label="Configurar Ticket", style=discord.ButtonStyle.primary, emoji="🎫", custom_id="btn_ticket")
     async def btn_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         if await self.verificar_permissao(interaction):
-            # NOVO MENU DE TICKETS
             await interaction.response.send_message("⚙️ **Configuração de Tickets**\nEscolha o que deseja configurar abaixo:", view=TicketConfigView(), ephemeral=True)
 
-# === MENU NOVO PARA EDITAR OS TICKETS ===
+
+# === NOVO MENU DE CONFIGURAÇÃO DE IDADES ===
+class AgesConfigView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=120)
+
+    @discord.ui.button(label="Definir Cargo +16", style=discord.ButtonStyle.primary)
+    async def btn_16(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Selecione o cargo para +16:", view=SingleRoleSelectView("role_16"), ephemeral=True)
+
+    @discord.ui.button(label="Definir Cargo +18", style=discord.ButtonStyle.primary)
+    async def btn_18(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Selecione o cargo para +18:", view=SingleRoleSelectView("role_18"), ephemeral=True)
+
+    @discord.ui.button(label="Definir Cargo +25", style=discord.ButtonStyle.primary)
+    async def btn_25(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Selecione o cargo para +25:", view=SingleRoleSelectView("role_25"), ephemeral=True)
+
+
+# === MENUS DE TICKETS ===
 class TicketConfigView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=120)
@@ -132,7 +156,8 @@ class TicketNamesModal(discord.ui.Modal, title="Nomes dos Botões de Ticket"):
         save_data(data)
         await interaction.response.send_message("✅ Nomes dos botões salvos! (Apague o painel de ticket antigo e envie /painelticket novamente para atualizar os nomes)", ephemeral=True)
 
-# === VIEWS SECUNDÁRIAS ORIGINAIS ===
+
+# === VIEWS SECUNDÁRIAS GERAIS ===
 class SingleRoleSelectView(discord.ui.View):
     def __init__(self, config_key):
         super().__init__(timeout=120)

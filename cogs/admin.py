@@ -97,7 +97,6 @@ class RegistroConfigView(discord.ui.View):
     @discord.ui.button(label="Adicionar Cargos Extras", style=discord.ButtonStyle.success)
     async def b4(self, interaction, button): await interaction.response.send_message("Selecione o cargo para ADICIONAR ao Registro:", view=AddRegRoleView(), ephemeral=True)
     
-    # NOVO BOTÃO: REMOVER CARGOS
     @discord.ui.button(label="Remover Cargos Extras", style=discord.ButtonStyle.danger)
     async def b5(self, interaction, button): 
         data = load_data()
@@ -132,15 +131,56 @@ class TicketConfigView(discord.ui.View):
     @discord.ui.button(label="Cat: Dúvidas", style=discord.ButtonStyle.secondary)
     async def b4(self, interaction, button): await interaction.response.send_message("Categoria Dúvidas:", view=ChannelSelectView("ticket_cat_duvida", discord.ChannelType.category), ephemeral=True)
 
+
 class StatsConfigView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=120)
+    
     @discord.ui.button(label="Categoria: Total Membros", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Onde mostrar Total de Membros:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
+    async def b1(self, interaction, button): 
+        await interaction.response.send_message("Onde mostrar Total de Membros:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
+    
     @discord.ui.button(label="Categoria: Em Call", style=discord.ButtonStyle.primary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Onde mostrar Pessoas em Call:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
+    async def b2(self, interaction, button): 
+        await interaction.response.send_message("Onde mostrar Pessoas em Call:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
+    
     @discord.ui.button(label="Canal de Voz pro Bot ficar", style=discord.ButtonStyle.secondary)
-    async def b3(self, interaction, button): await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
+    async def b3(self, interaction, button): 
+        await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
+    
+    # === NOVO BOTÃO: FORÇAR CONEXÃO DO BOT ===
+    @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
+    async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
+        data = load_data()
+        voice_id = data.get("stats_voice_channel")
+        
+        if not voice_id:
+            await interaction.response.send_message("❌ Você precisa configurar o **Canal de Voz pro Bot ficar** primeiro!", ephemeral=True)
+            return
+            
+        guild = interaction.guild
+        vc = guild.get_channel(voice_id)
+        
+        if not vc or not isinstance(vc, discord.VoiceChannel):
+            await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
+            return
+            
+        bot_voice = discord.utils.get(interaction.client.voice_clients, guild=guild)
+        
+        try:
+            # Verifica se o bot já não está em nenhuma call
+            if bot_voice is None or not bot_voice.is_connected():
+                await vc.connect()
+                await guild.me.edit(mute=True, deafen=True)
+            # Verifica se está na call errada
+            elif bot_voice.channel.id != vc.id:
+                await bot_voice.move_to(vc)
+                await guild.me.edit(mute=True, deafen=True)
+                
+            await interaction.response.send_message(f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}!", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar entrar na call: {e}", ephemeral=True)
+
 
 # === MODAIS E VIEWS GENÉRICAS ===
 class ImagensModal(discord.ui.Modal, title="URLs das Imagens (Limite do Discord: 5)"):
@@ -232,7 +272,6 @@ class AddRegRoleView(discord.ui.View):
             await interaction.response.edit_message(content=f"✅ Cargo {role.mention} adicionado!", view=None)
         else: await interaction.response.edit_message(content="⚠️ O cargo já está na lista.", view=None)
 
-# === NOVA VIEW: REMOVER CARGOS DO REGISTRO ===
 class RemoveRegRoleView(discord.ui.View):
     def __init__(self, options):
         super().__init__(timeout=120)

@@ -44,7 +44,8 @@ class AdminMainView(discord.ui.View):
             discord.SelectOption(label="Central de Tickets", value="tickets", emoji="🎫", description="Editar categorias e nomes de tickets"),
             discord.SelectOption(label="Estatísticas e Calls", value="stats", emoji="📊", description="Painel de categorias em tempo real"),
             discord.SelectOption(label="Regras do Servidor", value="regras", emoji="📜", description="Escrever o texto das regras"),
-            discord.SelectOption(label="Booster", value="booster", emoji="🚀", description="Configurar painel de impulsão")
+            discord.SelectOption(label="Booster", value="booster", emoji="🚀", description="Configurar painel de impulsão"),
+            discord.SelectOption(label="Comandos", value="comandos", emoji="📋", description="Configurar painel de comandos")
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -75,6 +76,8 @@ class AdminMainView(discord.ui.View):
             await interaction.response.send_modal(RegrasTextModal())
         elif val == "booster":
             await interaction.response.send_modal(BoosterConfigModal())
+        elif val == "comandos":
+            await interaction.response.send_modal(ComandosConfigModal())
 
 
 # === SUB-MENUS ===
@@ -154,7 +157,6 @@ class StatsConfigView(discord.ui.View):
     async def b3(self, interaction, button): 
         await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
 
-    # === BOTÃO: FORÇAR CONEXÃO DO BOT ===
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
@@ -171,7 +173,6 @@ class StatsConfigView(discord.ui.View):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
             return
 
-        # Verifica permissão do bot
         permissions = vc.permissions_for(guild.me)
         if not permissions.connect:
             await interaction.response.send_message("❌ O bot não tem permissão para **conectar** neste canal de voz!", ephemeral=True)
@@ -183,14 +184,12 @@ class StatsConfigView(discord.ui.View):
             bot_voice = guild.voice_client
 
             if bot_voice and bot_voice.channel.id == vc.id:
-                # Já está na call correta
                 await asyncio.sleep(2)
                 if bot_voice.is_connected() and not bot_voice.is_playing():
                     bot_voice.play(SilenceAudio())
                 await interaction.edit_original_response(content=f"✅ O bot já está na call {vc.mention}! (Áudio silencioso ativo)")
                 return
 
-            # Se está em outra call, desconecta primeiro
             if bot_voice:
                 try:
                     await bot_voice.disconnect(force=True)
@@ -198,9 +197,8 @@ class StatsConfigView(discord.ui.View):
                     pass
                 await asyncio.sleep(5)
 
-            # Conecta na call correta com self_deaf=False (evita erro 4006)
             voice_client = await vc.connect(timeout=20.0, reconnect=True, self_deaf=False)
-            await asyncio.sleep(8)  # Aguarda handshake estabilizar
+            await asyncio.sleep(8)
 
             if voice_client and voice_client.is_connected():
                 try:
@@ -218,8 +216,8 @@ class StatsConfigView(discord.ui.View):
             await interaction.edit_original_response(content=f"❌ Erro: {e}. A task automática tentará reconectar em breve.")
 
 
-# === MODAIS E VIEWS GENÉRICAS ===
-class ImagensModal(discord.ui.Modal, title="URLs das Imagens (Limite do Discord: 5)"):
+# === MODAIS ===
+class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
     def __init__(self):
         super().__init__()
         data = load_data()
@@ -229,7 +227,10 @@ class ImagensModal(discord.ui.Modal, title="URLs das Imagens (Limite do Discord:
         self.i4 = discord.ui.TextInput(label="Painel de Ticket", default=data.get("ticket_image"), required=False)
         self.i5 = discord.ui.TextInput(label="Boas Vindas (Chat)", default=data.get("welcome_image"), required=False)
         self.i6 = discord.ui.TextInput(label="Painel Booster", default=data.get("booster_image"), required=False)
-        self.add_item(self.i1); self.add_item(self.i2); self.add_item(self.i3); self.add_item(self.i4); self.add_item(self.i5); self.add_item(self.i6)
+        self.i7 = discord.ui.TextInput(label="Painel Comandos", default=data.get("comandos_image"), required=False)
+        self.add_item(self.i1); self.add_item(self.i2); self.add_item(self.i3)
+        self.add_item(self.i4); self.add_item(self.i5); self.add_item(self.i6)
+        self.add_item(self.i7)
 
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
@@ -239,6 +240,7 @@ class ImagensModal(discord.ui.Modal, title="URLs das Imagens (Limite do Discord:
         data["ticket_image"] = self.i4.value
         data["welcome_image"] = self.i5.value
         data["booster_image"] = self.i6.value
+        data["comandos_image"] = self.i7.value
         save_data(data)
         await interaction.response.send_message("✅ URLs salvas!", ephemeral=True)
 
@@ -277,37 +279,15 @@ class TicketNamesModal(discord.ui.Modal, title="Nomes dos Botões de Ticket"):
         data["ticket_name_compra"] = self.d3.value; data["ticket_name_duvida"] = self.d4.value
         save_data(data); await interaction.response.send_message("✅ Nomes salvos!", ephemeral=True)
 
-# NOVO MODAL PARA CONFIGURAR BOOSTER
 class BoosterConfigModal(discord.ui.Modal, title="⚙️ Configuração do Painel Booster"):
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.titulo = discord.ui.TextInput(
-            label="Título do Painel",
-            default=data.get("booster_title", "🚀 Impulsione o Servidor!"),
-            max_length=100
-        )
-        self.descricao = discord.ui.TextInput(
-            label="Descrição",
-            style=discord.TextStyle.paragraph,
-            default=data.get("booster_description", ""),
-            max_length=4000,
-            required=False
-        )
-        self.imagem = discord.ui.TextInput(
-            label="URL da Imagem (opcional)",
-            default=data.get("booster_image", ""),
-            required=False
-        )
-        self.label_botao = discord.ui.TextInput(
-            label="Texto do Botão",
-            default=data.get("booster_button_label", "⭐ Impulsionar Servidor"),
-            max_length=80
-        )
-        self.add_item(self.titulo)
-        self.add_item(self.descricao)
-        self.add_item(self.imagem)
-        self.add_item(self.label_botao)
+        self.titulo = discord.ui.TextInput(label="Título", default=data.get("booster_title", "🚀 Impulsione o Servidor!"), max_length=100)
+        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("booster_description", ""), max_length=4000, required=False)
+        self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("booster_image", ""), required=False)
+        self.label_botao = discord.ui.TextInput(label="Texto do Botão", default=data.get("booster_button_label", "⭐ Impulsionar Servidor"), max_length=80)
+        self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem); self.add_item(self.label_botao)
 
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
@@ -316,8 +296,27 @@ class BoosterConfigModal(discord.ui.Modal, title="⚙️ Configuração do Paine
         data["booster_image"] = self.imagem.value
         data["booster_button_label"] = self.label_botao.value
         save_data(data)
-        await interaction.response.send_message("✅ Configurações do Painel Booster salvas com sucesso!", ephemeral=True)
+        await interaction.response.send_message("✅ Configurações do Painel Booster salvas!", ephemeral=True)
 
+class ComandosConfigModal(discord.ui.Modal, title="⚙️ Configuração do Painel de Comandos"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        self.titulo = discord.ui.TextInput(label="Título do Painel", default=data.get("comandos_title", "📋 Central de Comandos"), max_length=100)
+        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("comandos_description", "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria."), max_length=2000, required=False)
+        self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("comandos_image", ""), required=False)
+        self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data()
+        data["comandos_title"] = self.titulo.value
+        data["comandos_description"] = self.descricao.value
+        data["comandos_image"] = self.imagem.value
+        save_data(data)
+        await interaction.response.send_message("✅ Configurações do Painel de Comandos salvas!", ephemeral=True)
+
+
+# === VIEWS GENÉRICAS ===
 class SingleRoleSelectView(discord.ui.View):
     def __init__(self, config_key):
         super().__init__(timeout=120)
@@ -368,6 +367,7 @@ class RemoveRegRoleView(discord.ui.View):
             await interaction.response.edit_message(content="✅ Cargo removido da lista de registro com sucesso!", view=None)
         else:
             await interaction.response.edit_message(content="❌ Erro: Este cargo não foi encontrado na lista.", view=None)
+
 
 async def setup(bot):
     bot.add_view(AdminMainView()) 

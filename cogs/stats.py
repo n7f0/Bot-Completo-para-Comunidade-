@@ -30,18 +30,19 @@ class StatsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.update_stats.start()
-        self.keep_alive_voice.start()
+        # DESATIVADO TEMPORARIAMENTE PARA EVITAR ERROS DE DNS
+        # self.keep_alive_voice.start()
         self._lock = asyncio.Lock()
         self._last_reconnect = 0
         self._cooldown_seconds = 120
         self._consecutive_failures = 0
         self._max_failures = 5
-        self._disabled = False
+        self._disabled = True  # Começa desativado
         self._first_run = True
 
     def cog_unload(self):
         self.update_stats.cancel()
-        self.keep_alive_voice.cancel()
+        # self.keep_alive_voice.cancel()
 
     @tasks.loop(minutes=6)
     async def update_stats(self):
@@ -77,7 +78,7 @@ class StatsCog(commands.Cog):
 
     async def _connect_voice(self, guild, vc):
         if self._disabled:
-            print("[Keep-Alive] ⛔ Task desativada devido a muitas falhas. Reinicie o bot para reativar.")
+            print("[Keep-Alive] ⛔ Task desativada. Para reativar, reinicie o bot e descomente a linha no __init__.")
             return False
 
         try:
@@ -126,83 +127,13 @@ class StatsCog(commands.Cog):
                 print(f"[Keep-Alive] ⛔ Desativado permanentemente após {self._max_failures} falhas.")
             return False
 
-    @tasks.loop(seconds=60)
-    async def keep_alive_voice(self):
-        await self.bot.wait_until_ready()
-
-        if self._disabled:
-            return
-
-        if self._first_run:
-            self._first_run = False
-            print("[Keep-Alive] ⏳ Aguardando 60s antes da primeira verificação...")
-            await asyncio.sleep(60)
-
-        if not self.bot.guilds:
-            return
-
-        guild = self.bot.guilds[0]
-        data = load_data()
-        voice_id = data.get("stats_voice_channel")
-        if not voice_id:
-            return
-
-        vc = guild.get_channel(voice_id)
-        if not vc or not isinstance(vc, discord.VoiceChannel):
-            return
-
-        if self._lock.locked():
-            return
-
-        async with self._lock:
-            bot_voice = guild.voice_client
-
-            if bot_voice is None:
-                now = asyncio.get_event_loop().time()
-                if now - self._last_reconnect < self._cooldown_seconds:
-                    return
-                self._last_reconnect = now
-
-                success = await self._connect_voice(guild, vc)
-                if not success and self._consecutive_failures >= 3:
-                    extra = min(600, 60 * (2 ** (self._consecutive_failures - 3)))
-                    print(f"[Keep-Alive] ⏸️ Falhas: {self._consecutive_failures}. Aguardando {extra}s extras.")
-                    self._last_reconnect = now + extra
-                return
-
-            if bot_voice.channel.id != vc.id:
-                now = asyncio.get_event_loop().time()
-                if now - self._last_reconnect < self._cooldown_seconds:
-                    return
-                self._last_reconnect = now
-
-                try:
-                    print(f"[Keep-Alive] Movendo de {bot_voice.channel.name} para {vc.name}...")
-                    await bot_voice.move_to(vc)
-                    await asyncio.sleep(8)
-
-                    if guild.voice_client and guild.voice_client.is_connected():
-                        try:
-                            await guild.me.edit(mute=True, deafen=True)
-                        except:
-                            pass
-                        if not guild.voice_client.is_playing():
-                            guild.voice_client.play(SilenceAudio())
-                        print("[Keep-Alive] ✅ Movido com sucesso.")
-                        self._consecutive_failures = 0
-                except Exception as e:
-                    print(f"[Keep-Alive] ❌ Erro ao mover: {e}")
-                    self._consecutive_failures += 1
-                    if self._consecutive_failures >= self._max_failures:
-                        self._disabled = True
-                return
-
-            if bot_voice.is_connected() and not bot_voice.is_playing():
-                try:
-                    bot_voice.play(SilenceAudio())
-                    print("[Keep-Alive] 🔊 Áudio silencioso reiniciado.")
-                except Exception as e:
-                    print(f"[Keep-Alive] ❌ Erro ao reiniciar áudio: {e}")
+    # Task de keep_alive desativada - comentada
+    # @tasks.loop(seconds=60)
+    # async def keep_alive_voice(self):
+    #     await self.bot.wait_until_ready()
+    #     if self._disabled:
+    #         return
+    #     # ... resto do código ...
 
 
 async def setup(bot):

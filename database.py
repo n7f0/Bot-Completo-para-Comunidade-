@@ -14,13 +14,13 @@ def load_data():
             "admin_image": "",
             "reg_image": "",
             "ticket_image": "",
+            "rules_image": "",
+            "rules_text": "Escreva suas regras aqui...",
             
-            # Cargos de Idade
             "role_16": None,
             "role_18": None,
             "role_25": None,
             
-            # Categorias e Nomes de Ticket
             "ticket_cat_denuncia": None,
             "ticket_cat_parceria": None,
             "ticket_cat_compra": None,
@@ -28,7 +28,11 @@ def load_data():
             "ticket_name_denuncia": "🚨 Denúncias",
             "ticket_name_parceria": "🤝 Parcerias",
             "ticket_name_compra": "🛒 Compras",
-            "ticket_name_duvida": "❓ Dúvidas"
+            "ticket_name_duvida": "❓ Dúvidas",
+
+            "stats_cat_members": None,
+            "stats_cat_voice": None,
+            "stats_voice_channel": None
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

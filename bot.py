@@ -11,7 +11,8 @@ class MeuBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True # Necessário para o sistema de boas vindas
+        intents.members = True 
+        intents.voice_states = True # Necessário para contar quem está em call
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
@@ -20,8 +21,9 @@ class MeuBot(commands.Bot):
         await self.load_extension("cogs.registro")
         await self.load_extension("cogs.events")
         await self.load_extension("cogs.ticket")
+        await self.load_extension("cogs.regras")
+        await self.load_extension("cogs.stats")
         
-        # Sincroniza os comandos de barra (/)
         try:
             await self.tree.sync()
             print("✅ Comandos de barra sincronizados!", flush=True)

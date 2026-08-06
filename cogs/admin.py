@@ -4,8 +4,8 @@ from discord import app_commands
 from database import load_data, save_data
 import asyncio
 
-# Importa a nova classe de áudio silencioso (agora com FFmpeg)
-from stats import SilenceAudio
+# Importação relativa (mesmo pacote cogs)
+from .stats import SilenceAudio
 
 
 class AdminCog(commands.Cog):
@@ -185,7 +185,6 @@ class StatsConfigView(discord.ui.View):
                 # Já está na call correta
                 await asyncio.sleep(2)
                 if bot_voice.is_connected() and not bot_voice.is_playing():
-                    # Usa a nova classe de áudio (FFmpeg)
                     bot_voice.play(SilenceAudio())
                 await interaction.edit_original_response(content=f"✅ O bot já está na call {vc.mention}! (Áudio silencioso ativo)")
                 return

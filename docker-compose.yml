@@ -14,11 +14,3 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
-    # Adiciona configuração de DNS via /etc/resolv.conf no runtime
-    dns_config:
-      nameservers:
-        - 8.8.8.8
-        - 8.8.4.4
-      options:
-        - name: ndots
-          value: "0"

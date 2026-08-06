@@ -5,12 +5,9 @@ services:
     build: .
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - DISCORD_VOICE_IPV6=0          # Força IPv4
-      - PYTHONUNBUFFERED=1            # Logs em tempo real
+      - DISCORD_VOICE_IPV6=0
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    # network_mode: host dá ao container acesso DIRETO à rede do host.
-    # Isso resolve problemas de NAT/UDP que causam o erro 4006 no Discord Voice.
-    # NOTA: Só funciona em Linux. Se estiver no Windows/Mac, comente esta linha.
     network_mode: host

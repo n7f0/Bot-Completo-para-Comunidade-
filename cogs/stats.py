@@ -6,7 +6,7 @@ class StatsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.update_stats.start()
-        self.maintain_voice.start() # Nova função rodando em paralelo só para a call
+        self.maintain_voice.start()
 
     def cog_unload(self):
         self.update_stats.cancel()
@@ -44,8 +44,8 @@ class StatsCog(commands.Cog):
                     try: await cat_voice.edit(name=novo_nome)
                     except Exception as e: print(f"Erro ao editar categoria de voz: {e}")
 
-    # TAREFA 2: Mantém o bot na call automaticamente (Roda a cada 10 segundos)
-    @tasks.loop(seconds=10)
+    # TAREFA 2: Mantém o bot na call automaticamente e previne o erro 4006 (Roda a cada 15 segundos)
+    @tasks.loop(seconds=15)
     async def maintain_voice(self):
         await self.bot.wait_until_ready()
         data = load_data()
@@ -59,25 +59,24 @@ class StatsCog(commands.Cog):
         if voice_channel_id:
             vc = guild.get_channel(voice_channel_id)
             if vc and isinstance(vc, discord.VoiceChannel):
-                bot_voice_client = discord.utils.get(self.bot.voice_clients, guild=guild)
+                bot_voice_client = guild.voice_client
                 
-                # Se o bot não estiver em NENHUMA call, ele entra na configurada
-                if bot_voice_client is None or not bot_voice_client.is_connected():
-                    try:
+                try:
+                    # Se o bot cair em um estado corrompido ou erro de socket, desconecta limpo primeiro
+                    if bot_voice_client and not bot_voice_client.is_connected():
+                        await bot_voice_client.disconnect(force=True)
+                        bot_voice_client = None
+
+                    if bot_voice_client is None:
                         await vc.connect()
-                        me = guild.me
-                        await me.edit(mute=True, deafen=True)
-                    except Exception as e:
-                        pass
-                
-                # Se o bot estiver em uma call errada (alguém puxou ele), ele volta pra certa
-                elif bot_voice_client.channel.id != vc.id:
-                    try:
+                        await guild.me.edit(mute=True, deafen=True)
+                    elif bot_voice_client.channel.id != vc.id:
                         await bot_voice_client.move_to(vc)
-                        me = guild.me
-                        await me.edit(mute=True, deafen=True)
-                    except Exception as e:
-                        pass
+                        await guild.me.edit(mute=True, deafen=True)
+                except Exception as e:
+                    if guild.voice_client:
+                        try: await guild.voice_client.disconnect(force=True)
+                        except: pass
 
 async def setup(bot):
     await bot.add_cog(StatsCog(bot))

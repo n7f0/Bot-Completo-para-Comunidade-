@@ -32,7 +32,20 @@ def load_data():
 
             "stats_cat_members": None,
             "stats_cat_voice": None,
-            "stats_voice_channel": None
+            "stats_voice_channel": None,
+
+            # NOVOS CAMPOS PARA BOOSTER
+            "booster_title": "🚀 Impulsione o Servidor!",
+            "booster_description": (
+                "Ao impulsionar o servidor, você desbloqueia benefícios exclusivos:\n"
+                "• 🎨 Mais slots de emojis\n"
+                "• 🔊 Qualidade de áudio superior\n"
+                "• 📈 Upload de arquivos maiores\n"
+                "• 🏷️ Cargo especial de Booster\n\n"
+                "Clique no botão abaixo para impulsionar agora!"
+            ),
+            "booster_image": "",
+            "booster_button_label": "⭐ Impulsionar Servidor"
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

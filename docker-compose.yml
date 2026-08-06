@@ -10,7 +10,7 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    # network_mode: host dá ao container acesso DIRETO à rede do host.
+    # Isso resolve problemas de NAT/UDP que causam o erro 4006 no Discord Voice.
+    # NOTA: Só funciona em Linux. Se estiver no Windows/Mac, comente esta linha.
     network_mode: host
-    # Adicional: se mesmo com host falhar, tente com rede bridge e portas mapeadas
-    # ports:
-    #   - "5000-6000:5000-6000/udp"   # Não é necessário com host, mas pode ajudar

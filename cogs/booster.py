@@ -9,7 +9,6 @@ class BoosterCog(commands.Cog):
 
     @app_commands.command(name="painelbooster", description="Envia o painel de impulso (booster) do servidor")
     async def painelbooster(self, interaction: discord.Interaction):
-        # Permissão: apenas administradores podem enviar
         if not interaction.user.guild_permissions.administrator:
             await interaction.response.send_message("❌ Apenas administradores podem enviar este painel.", ephemeral=True)
             return
@@ -20,12 +19,11 @@ class BoosterCog(commands.Cog):
         embed = discord.Embed(
             title=data.get("booster_title", "🚀 Impulsione o Servidor!"),
             description=data.get("booster_description", ""),
-            color=0xff0000  # vermelho igual aos outros painéis
+            color=0xff0000
         )
         if data.get("booster_image"):
             embed.set_image(url=data.get("booster_image"))
 
-        # Botão que abre o link de boost do servidor
         boost_url = f"https://discord.com/servers/{guild.id}"
         view = discord.ui.View()
         view.add_item(

@@ -1,6 +1,5 @@
 import discord
-from discord.ext import commands
-from discord import app_commands
+from discord.ext import commandsfrom discord import app_commands
 from database import load_data
 
 class BoosterCog(commands.Cog):

@@ -34,7 +34,6 @@ def load_data():
             "stats_cat_voice": None,
             "stats_voice_channel": None,
 
-            # CAMPOS BOOSTER
             "booster_title": "🚀 Impulsione o Servidor!",
             "booster_description": (
                 "Ao impulsionar o servidor, você desbloqueia benefícios exclusivos:\n"
@@ -47,7 +46,6 @@ def load_data():
             "booster_image": "",
             "booster_button_label": "⭐ Impulsionar Servidor",
 
-            # CAMPOS PAINEL DE COMANDOS
             "comandos_title": "📋 Central de Comandos",
             "comandos_description": "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria.",
             "comandos_image": "",

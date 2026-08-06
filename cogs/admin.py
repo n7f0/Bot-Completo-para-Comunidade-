@@ -4,6 +4,10 @@ from discord import app_commands
 from database import load_data, save_data
 import asyncio
 
+# Importa a nova classe de áudio silencioso (agora com FFmpeg)
+from stats import SilenceAudio
+
+
 class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -149,7 +153,7 @@ class StatsConfigView(discord.ui.View):
     async def b3(self, interaction, button): 
         await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
 
-    # === BOTÃO: FORÇAR CONEXÃO DO BOT ===
+    # === BOTÃO: FORÇAR CONEXÃO DO BOT (CORRIGIDO) ===
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
@@ -181,7 +185,7 @@ class StatsConfigView(discord.ui.View):
                 # Já está na call correta
                 await asyncio.sleep(2)
                 if bot_voice.is_connected() and not bot_voice.is_playing():
-                    from stats import SilenceAudio
+                    # Usa a nova classe de áudio (FFmpeg)
                     bot_voice.play(SilenceAudio())
                 await interaction.edit_original_response(content=f"✅ O bot já está na call {vc.mention}! (Áudio silencioso ativo)")
                 return
@@ -205,7 +209,6 @@ class StatsConfigView(discord.ui.View):
                     pass
                 await asyncio.sleep(1)
                 if not voice_client.is_playing():
-                    from stats import SilenceAudio
                     voice_client.play(SilenceAudio())
                 await interaction.edit_original_response(content=f"✅ O bot entrou e foi mutado na call {vc.mention}! (Keep-alive 24/7 ativado)")
             else:

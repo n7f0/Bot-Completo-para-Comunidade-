@@ -47,7 +47,7 @@ class BotaoRegistroPersistente(discord.ui.View):
 
 class IdadeView(discord.ui.View):
     def __init__(self, user):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
         self.user = user
 
     @discord.ui.select(placeholder="Selecione sua idade...", options=[
@@ -95,7 +95,7 @@ class IdadeView(discord.ui.View):
 
 class CargosView(discord.ui.View):
     def __init__(self, age_role_id, age_label):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
         self.age_role_id = age_role_id
         self.age_label = age_label
 

@@ -10,7 +10,6 @@ import subprocess
 # ============================================
 class SilenceAudio(discord.FFmpegPCMAudio):
     def __init__(self):
-        # Cria um arquivo de silêncio se não existir
         silence_file = "silence.mp3"
         if not os.path.exists(silence_file):
             try:
@@ -34,10 +33,10 @@ class StatsCog(commands.Cog):
         self.keep_alive_voice.start()
         self._lock = asyncio.Lock()
         self._last_reconnect = 0
-        self._cooldown_seconds = 120          # 2 minutos entre tentativas
+        self._cooldown_seconds = 120
         self._consecutive_failures = 0
-        self._max_failures = 5                # desativa após 5 falhas seguidas
-        self._disabled = False                # task desativada
+        self._max_failures = 5
+        self._disabled = False
         self._first_run = True
 
     def cog_unload(self):
@@ -77,19 +76,16 @@ class StatsCog(commands.Cog):
                         print(f"[Stats] Erro categoria voz: {e}")
 
     async def _connect_voice(self, guild, vc):
-        """Conecta na call com self_deaf=False para evitar erro 4006."""
         if self._disabled:
             print("[Keep-Alive] ⛔ Task desativada devido a muitas falhas. Reinicie o bot para reativar.")
             return False
 
         try:
-            # Verifica permissão
             permissions = vc.permissions_for(guild.me)
             if not permissions.connect:
                 print(f"[Keep-Alive] ❌ Sem permissão 'Conectar' em {vc.name}")
                 return False
 
-            # Desconecta qualquer conexão anterior
             if guild.voice_client:
                 try:
                     await guild.voice_client.disconnect(force=True)
@@ -99,18 +95,14 @@ class StatsCog(commands.Cog):
 
             print(f"[Keep-Alive] Conectando em {vc.name} com self_deaf=False...")
             voice_client = await vc.connect(timeout=20.0, reconnect=True, self_deaf=False)
-
-            # Aguarda estabilização (mais tempo)
             await asyncio.sleep(10)
 
             if voice_client and voice_client.is_connected():
-                # Muta e ensurdece manualmente
                 try:
                     await guild.me.edit(mute=True, deafen=True)
                 except Exception as e:
                     print(f"[Keep-Alive] Erro ao mutar/ensurdecer: {e}")
 
-                # Inicia áudio silencioso
                 if not voice_client.is_playing():
                     voice_client.play(SilenceAudio())
 
@@ -165,7 +157,6 @@ class StatsCog(commands.Cog):
         async with self._lock:
             bot_voice = guild.voice_client
 
-            # Caso 1: Bot não está em nenhuma call
             if bot_voice is None:
                 now = asyncio.get_event_loop().time()
                 if now - self._last_reconnect < self._cooldown_seconds:
@@ -179,7 +170,6 @@ class StatsCog(commands.Cog):
                     self._last_reconnect = now + extra
                 return
 
-            # Caso 2: Bot está em outra call
             if bot_voice.channel.id != vc.id:
                 now = asyncio.get_event_loop().time()
                 if now - self._last_reconnect < self._cooldown_seconds:
@@ -207,7 +197,6 @@ class StatsCog(commands.Cog):
                         self._disabled = True
                 return
 
-            # Caso 3: Bot está na call correta – apenas garante que o áudio está tocando
             if bot_voice.is_connected() and not bot_voice.is_playing():
                 try:
                     bot_voice.play(SilenceAudio())

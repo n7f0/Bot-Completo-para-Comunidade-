@@ -12,7 +12,7 @@ class MeuBot(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.members = True 
-        intents.voice_states = True # Necessário para contar quem está em call
+        intents.voice_states = True
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
@@ -23,7 +23,8 @@ class MeuBot(commands.Bot):
         await self.load_extension("cogs.ticket")
         await self.load_extension("cogs.regras")
         await self.load_extension("cogs.stats")
-        await self.load_extension("cogs.booster")  # NOVO
+        await self.load_extension("cogs.booster")
+        await self.load_extension("cogs.comandos")
         
         try:
             await self.tree.sync()

@@ -149,7 +149,7 @@ class StatsConfigView(discord.ui.View):
     async def b3(self, interaction, button): 
         await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
 
-    # === BOTÃO SIMPLIFICADO: FORÇAR CONEXÃO DO BOT ===
+    # === BOTÃO: FORÇAR CONEXÃO DO BOT ===
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
@@ -164,6 +164,12 @@ class StatsConfigView(discord.ui.View):
 
         if not vc or not isinstance(vc, discord.VoiceChannel):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
+            return
+
+        # Verifica permissão do bot
+        permissions = vc.permissions_for(guild.me)
+        if not permissions.connect:
+            await interaction.response.send_message("❌ O bot não tem permissão para **conectar** neste canal de voz!", ephemeral=True)
             return
 
         await interaction.response.send_message("🔊 Conectando o bot na call, aguarde...", ephemeral=True)
@@ -186,14 +192,17 @@ class StatsConfigView(discord.ui.View):
                     await bot_voice.disconnect(force=True)
                 except:
                     pass
-                await asyncio.sleep(3)
+                await asyncio.sleep(5)
 
-            # Conecta na call correta
-            voice_client = await vc.connect(timeout=30.0, reconnect=True)
-            await asyncio.sleep(5)  # Aguarda handshake estabilizar
+            # Conecta na call correta com self_deaf
+            voice_client = await vc.connect(timeout=30.0, reconnect=True, self_deaf=True)
+            await asyncio.sleep(8)  # Aguarda handshake estabilizar
 
             if voice_client and voice_client.is_connected():
-                await guild.me.edit(mute=True, deafen=True)
+                try:
+                    await guild.me.edit(mute=True)
+                except:
+                    pass
                 await asyncio.sleep(1)
                 if not voice_client.is_playing():
                     from stats import SilenceAudio

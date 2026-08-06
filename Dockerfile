@@ -2,7 +2,6 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instala ffmpeg, libopus e utilitários de rede (para debug)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libopus0 \

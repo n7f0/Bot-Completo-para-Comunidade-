@@ -34,7 +34,7 @@ def load_data():
             "stats_cat_voice": None,
             "stats_voice_channel": None,
 
-            # NOVOS CAMPOS PARA BOOSTER
+            # CAMPOS BOOSTER
             "booster_title": "🚀 Impulsione o Servidor!",
             "booster_description": (
                 "Ao impulsionar o servidor, você desbloqueia benefícios exclusivos:\n"
@@ -45,7 +45,13 @@ def load_data():
                 "Clique no botão abaixo para impulsionar agora!"
             ),
             "booster_image": "",
-            "booster_button_label": "⭐ Impulsionar Servidor"
+            "booster_button_label": "⭐ Impulsionar Servidor",
+
+            # CAMPOS PAINEL DE COMANDOS
+            "comandos_title": "📋 Central de Comandos",
+            "comandos_description": "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria.",
+            "comandos_image": "",
+            "comandos_channel_id": None
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

@@ -22,8 +22,7 @@ class SilenceAudio(discord.FFmpegPCMAudio):
                 print("[Audio] Arquivo de silêncio criado com sucesso.")
             except Exception as e:
                 print(f"[Audio] Erro ao criar silence.mp3: {e}. Usando fallback PCM.")
-                # Fallback para PCM (pode não funcionar em todos os casos)
-                super().__init__(silence_file)  # vai falhar, mas tratamos
+                super().__init__(silence_file)
                 return
         super().__init__(silence_file, before_options="-reconnect 1 -reconnect_streamed 1")
 
@@ -78,7 +77,7 @@ class StatsCog(commands.Cog):
                         print(f"[Stats] Erro categoria voz: {e}")
 
     async def _connect_voice(self, guild, vc):
-        """Conecta na call com tratamento de erro e backoff."""
+        """Conecta na call com self_deaf=False para evitar erro 4006."""
         if self._disabled:
             print("[Keep-Alive] ⛔ Task desativada devido a muitas falhas. Reinicie o bot para reativar.")
             return False
@@ -98,30 +97,35 @@ class StatsCog(commands.Cog):
                     pass
                 await asyncio.sleep(5)
 
-            print(f"[Keep-Alive] Conectando em {vc.name}...")
-            voice_client = await vc.connect(timeout=30.0, reconnect=True, self_deaf=True)
+            print(f"[Keep-Alive] Conectando em {vc.name} com self_deaf=False...")
+            voice_client = await vc.connect(timeout=20.0, reconnect=True, self_deaf=False)
 
-            # Aguarda estabilização
-            await asyncio.sleep(8)
+            # Aguarda estabilização (mais tempo)
+            await asyncio.sleep(10)
 
             if voice_client and voice_client.is_connected():
-                # Muta o bot (já está self_deaf, mas garantimos)
+                # Muta e ensurdece manualmente
                 try:
-                    await guild.me.edit(mute=True)
-                except:
-                    pass
+                    await guild.me.edit(mute=True, deafen=True)
+                except Exception as e:
+                    print(f"[Keep-Alive] Erro ao mutar/ensurdecer: {e}")
 
                 # Inicia áudio silencioso
                 if not voice_client.is_playing():
                     voice_client.play(SilenceAudio())
-                print(f"[Keep-Alive] ✅ Conectado e com áudio silencioso em {vc.name}")
+
+                print(f"[Keep-Alive] ✅ Conectado e mutado em {vc.name}")
                 self._consecutive_failures = 0
                 return True
             else:
-                print("[Keep-Alive] ⚠️ Handshake não estabilizou.")
+                print("[Keep-Alive] ⚠️ Handshake não estabilizou após 10s.")
                 self._consecutive_failures += 1
                 return False
 
+        except discord.ClientException as e:
+            print(f"[Keep-Alive] ❌ ClientException: {e}")
+            self._consecutive_failures += 1
+            return False
         except Exception as e:
             print(f"[Keep-Alive] ❌ Erro ao conectar: {e}")
             self._consecutive_failures += 1
@@ -170,7 +174,6 @@ class StatsCog(commands.Cog):
 
                 success = await self._connect_voice(guild, vc)
                 if not success and self._consecutive_failures >= 3:
-                    # Aumenta cooldown progressivamente
                     extra = min(600, 60 * (2 ** (self._consecutive_failures - 3)))
                     print(f"[Keep-Alive] ⏸️ Falhas: {self._consecutive_failures}. Aguardando {extra}s extras.")
                     self._last_reconnect = now + extra
@@ -190,7 +193,7 @@ class StatsCog(commands.Cog):
 
                     if guild.voice_client and guild.voice_client.is_connected():
                         try:
-                            await guild.me.edit(mute=True)
+                            await guild.me.edit(mute=True, deafen=True)
                         except:
                             pass
                         if not guild.voice_client.is_playing():

@@ -32,7 +32,7 @@ class AdminCog(commands.Cog):
 
 class AdminMainView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=None) 
+        super().__init__(timeout=300)  # 5 minutos de timeout
 
     @discord.ui.select(
         custom_id="master_admin_select",
@@ -49,41 +49,46 @@ class AdminMainView(discord.ui.View):
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        data = load_data()
-        admin_id = data.get("admin_role_id")
-        tem_permissao = interaction.user.guild_permissions.administrator
-        if admin_id and not tem_permissao:
-            role = interaction.guild.get_role(admin_id)
-            if role and role in interaction.user.roles:
-                tem_permissao = True
+        # Verifica se a interação ainda é válida
+        if not interaction.response.is_done():
+            data = load_data()
+            admin_id = data.get("admin_role_id")
+            tem_permissao = interaction.user.guild_permissions.administrator
+            if admin_id and not tem_permissao:
+                role = interaction.guild.get_role(admin_id)
+                if role and role in interaction.user.roles:
+                    tem_permissao = True
 
-        if not tem_permissao:
-            await interaction.response.send_message("❌ Você não tem permissão para usar o painel.", ephemeral=True)
-            return
+            if not tem_permissao:
+                await interaction.response.send_message("❌ Você não tem permissão para usar o painel.", ephemeral=True)
+                return
 
-        val = select.values[0]
-        if val == "geral":
-            await interaction.response.send_message("⚙️ **Configurações Gerais**", view=GeralConfigView(), ephemeral=True)
-        elif val == "imagens":
-            await interaction.response.send_modal(ImagensModal())
-        elif val == "registro":
-            await interaction.response.send_message("📋 **Configurações de Registro**", view=RegistroConfigView(), ephemeral=True)
-        elif val == "tickets":
-            await interaction.response.send_message("🎫 **Configurações de Tickets**", view=TicketConfigView(), ephemeral=True)
-        elif val == "stats":
-            await interaction.response.send_message("📊 **Configurações de Estatísticas**", view=StatsConfigView(), ephemeral=True)
-        elif val == "regras":
-            await interaction.response.send_modal(RegrasTextModal())
-        elif val == "booster":
-            await interaction.response.send_modal(BoosterConfigModal())
-        elif val == "comandos":
-            await interaction.response.send_modal(ComandosConfigModal())
+            val = select.values[0]
+            if val == "geral":
+                await interaction.response.send_message("⚙️ **Configurações Gerais**", view=GeralConfigView(), ephemeral=True)
+            elif val == "imagens":
+                await interaction.response.send_modal(ImagensModal())
+            elif val == "registro":
+                await interaction.response.send_message("📋 **Configurações de Registro**", view=RegistroConfigView(), ephemeral=True)
+            elif val == "tickets":
+                await interaction.response.send_message("🎫 **Configurações de Tickets**", view=TicketConfigView(), ephemeral=True)
+            elif val == "stats":
+                await interaction.response.send_message("📊 **Configurações de Estatísticas**", view=StatsConfigView(), ephemeral=True)
+            elif val == "regras":
+                await interaction.response.send_modal(RegrasTextModal())
+            elif val == "booster":
+                await interaction.response.send_modal(BoosterConfigModal())
+            elif val == "comandos":
+                await interaction.response.send_modal(ComandosConfigModal())
+        else:
+            # Se a interação já foi respondida, avisa o usuário
+            await interaction.followup.send("⏰ A interação expirou. Por favor, tente novamente.", ephemeral=True)
 
 
 # === SUB-MENUS ===
 class GeralConfigView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
     @discord.ui.button(label="Cargo Admin", style=discord.ButtonStyle.secondary)
     async def b1(self, interaction, button): await interaction.response.send_message("Cargo Admin:", view=SingleRoleSelectView("admin_role_id"), ephemeral=True)
     @discord.ui.button(label="Cargo Automático", style=discord.ButtonStyle.secondary)
@@ -95,7 +100,7 @@ class GeralConfigView(discord.ui.View):
 
 class RegistroConfigView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
     @discord.ui.button(label="Cargo +16", style=discord.ButtonStyle.primary)
     async def b1(self, interaction, button): await interaction.response.send_message("Cargo +16:", view=SingleRoleSelectView("role_16"), ephemeral=True)
     @discord.ui.button(label="Cargo +18", style=discord.ButtonStyle.primary)
@@ -128,7 +133,7 @@ class RegistroConfigView(discord.ui.View):
 
 class TicketConfigView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
     @discord.ui.button(label="Nomes dos Botões", style=discord.ButtonStyle.primary)
     async def b_names(self, interaction, button): await interaction.response.send_modal(TicketNamesModal())
     @discord.ui.button(label="Cat: Denúncias", style=discord.ButtonStyle.secondary)
@@ -143,7 +148,7 @@ class TicketConfigView(discord.ui.View):
 
 class StatsConfigView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
 
     @discord.ui.button(label="Categoria: Total Membros", style=discord.ButtonStyle.primary)
     async def b1(self, interaction, button): 
@@ -319,7 +324,7 @@ class ComandosConfigModal(discord.ui.Modal, title="⚙️ Configuração do Pain
 # === VIEWS GENÉRICAS ===
 class SingleRoleSelectView(discord.ui.View):
     def __init__(self, config_key):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
         self.config_key = config_key
     @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Escolha o cargo aqui...")
     async def callback(self, interaction, select):
@@ -328,7 +333,7 @@ class SingleRoleSelectView(discord.ui.View):
 
 class ChannelSelectView(discord.ui.View):
     def __init__(self, config_key, channel_type=discord.ChannelType.text):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
         self.config_key = config_key
         self.add_item(ChannelSelectComponent(config_key, channel_type))
 
@@ -341,7 +346,7 @@ class ChannelSelectComponent(discord.ui.ChannelSelect):
         await interaction.response.edit_message(content=f"✅ Salvo: {self.values[0].mention}", view=None)
 
 class AddRegRoleView(discord.ui.View):
-    def __init__(self): super().__init__(timeout=120)
+    def __init__(self): super().__init__(timeout=300)
     @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo para adicionar...")
     async def callback(self, interaction, select):
         role = select.values[0]; data = load_data()
@@ -352,7 +357,7 @@ class AddRegRoleView(discord.ui.View):
 
 class RemoveRegRoleView(discord.ui.View):
     def __init__(self, options):
-        super().__init__(timeout=120)
+        super().__init__(timeout=300)
         select = discord.ui.Select(placeholder="Selecione qual cargo remover...", options=options)
         select.callback = self.select_callback
         self.add_item(select)

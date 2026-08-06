@@ -166,40 +166,58 @@ class StatsConfigView(discord.ui.View):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
             return
 
-        # Pega a conexão atual do bot no servidor, se existir
+        # Responde imediatamente para não expirar a interação
+        await interaction.response.send_message("🔊 Conectando o bot na call, aguarde...", ephemeral=True)
+
         bot_voice = guild.voice_client
 
         try:
             if bot_voice:
                 if bot_voice.channel.id == vc.id:
                     # Já está no lugar certo - garante áudio silencioso
-                    if not bot_voice.is_playing():
+                    await asyncio.sleep(2)
+                    if bot_voice.is_connected() and not bot_voice.is_playing():
                         from stats import SilenceAudio
                         bot_voice.play(SilenceAudio())
-                    await interaction.response.send_message(f"✅ O bot já está conectado e mutado na call {vc.mention}! (Áudio silencioso ativo)", ephemeral=True)
+                    await interaction.edit_original_response(content=f"✅ O bot já está conectado e mutado na call {vc.mention}! (Áudio silencioso ativo)")
                 else:
                     # Está em outra call, vamos mover
                     await bot_voice.move_to(vc)
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(4)  # Aguarda handshake após mover
                     # Inicia áudio silencioso após mover
-                    if guild.voice_client and not guild.voice_client.is_playing():
+                    if guild.voice_client and guild.voice_client.is_connected() and not guild.voice_client.is_playing():
                         from stats import SilenceAudio
                         guild.voice_client.play(SilenceAudio())
                     await guild.me.edit(mute=True, deafen=True)
-                    await interaction.response.send_message(f"✅ O bot foi movido para a call {vc.mention}! (Keep-alive ativo 24/7)", ephemeral=True)
+                    await interaction.edit_original_response(content=f"✅ O bot foi movido para a call {vc.mention}! (Keep-alive ativo 24/7)")
             else:
                 # Não está em nenhuma call, vamos conectar
-                await vc.connect()
-                await asyncio.sleep(1)
+                # Desconecta forçado se houver resquício de conexão
+                if guild.voice_client:
+                    try:
+                        await guild.voice_client.disconnect(force=True)
+                    except:
+                        pass
+                    await asyncio.sleep(2)
+
+                voice_client = await vc.connect(timeout=30.0, reconnect=True)
+                await asyncio.sleep(4)  # Aguarda handshake de voz completar
+
+                # Verifica se conectou de verdade
+                if not voice_client or not voice_client.is_connected():
+                    await interaction.edit_original_response(content=f"❌ O handshake de voz falhou. O bot tentará reconectar automaticamente em breve.")
+                    return
+
                 # Inicia áudio silencioso para evitar desconexão por inatividade
-                if guild.voice_client and not guild.voice_client.is_playing():
+                if not voice_client.is_playing():
                     from stats import SilenceAudio
-                    guild.voice_client.play(SilenceAudio())
+                    voice_client.play(SilenceAudio())
+
                 await guild.me.edit(mute=True, deafen=True)
-                await interaction.response.send_message(f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}! (Keep-alive 24/7 ativado)", ephemeral=True)
+                await interaction.edit_original_response(content=f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}! (Keep-alive 24/7 ativado)")
 
         except Exception as e:
-            await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar gerenciar a call: {e}", ephemeral=True)
+            await interaction.edit_original_response(content=f"❌ Ocorreu um erro ao tentar gerenciar a call: {e}")
 
 
 # === MODAIS E VIEWS GENÉRICAS ===

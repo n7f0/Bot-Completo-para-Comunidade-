@@ -148,7 +148,7 @@ class StatsConfigView(discord.ui.View):
     async def b3(self, interaction, button): 
         await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
     
-    # === NOVO BOTÃO: FORÇAR CONEXÃO DO BOT ===
+    # === BOTÃO ATUALIZADO: FORÇAR CONEXÃO DO BOT ===
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
@@ -165,21 +165,27 @@ class StatsConfigView(discord.ui.View):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
             return
             
-        bot_voice = discord.utils.get(interaction.client.voice_clients, guild=guild)
+        # Pega a conexão atual do bot no servidor, se existir
+        bot_voice = guild.voice_client
         
         try:
-            # Verifica se o bot já não está em nenhuma call
-            if bot_voice is None or not bot_voice.is_connected():
+            if bot_voice:
+                if bot_voice.channel.id == vc.id:
+                    # Já está no lugar certo
+                    await interaction.response.send_message(f"✅ O bot já está conectado e mutado na call {vc.mention}!", ephemeral=True)
+                else:
+                    # Está em outra call, vamos mover
+                    await bot_voice.move_to(vc)
+                    await guild.me.edit(mute=True, deafen=True)
+                    await interaction.response.send_message(f"✅ O bot foi movido para a call {vc.mention}!", ephemeral=True)
+            else:
+                # Não está em nenhuma call, vamos conectar
                 await vc.connect()
                 await guild.me.edit(mute=True, deafen=True)
-            # Verifica se está na call errada
-            elif bot_voice.channel.id != vc.id:
-                await bot_voice.move_to(vc)
-                await guild.me.edit(mute=True, deafen=True)
+                await interaction.response.send_message(f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}!", ephemeral=True)
                 
-            await interaction.response.send_message(f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}!", ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar entrar na call: {e}", ephemeral=True)
+            await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar gerenciar a call: {e}", ephemeral=True)
 
 
 # === MODAIS E VIEWS GENÉRICAS ===

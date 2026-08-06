@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from database import load_data, save_data
+import asyncio
 
 class AdminCog(commands.Cog):
     def __init__(self, bot):
@@ -51,7 +52,7 @@ class AdminMainView(discord.ui.View):
             role = interaction.guild.get_role(admin_id)
             if role and role in interaction.user.roles:
                 tem_permissao = True
-                
+
         if not tem_permissao:
             await interaction.response.send_message("❌ Você não tem permissão para usar o painel.", ephemeral=True)
             return
@@ -93,10 +94,10 @@ class RegistroConfigView(discord.ui.View):
     async def b2(self, interaction, button): await interaction.response.send_message("Cargo +18:", view=SingleRoleSelectView("role_18"), ephemeral=True)
     @discord.ui.button(label="Cargo +25", style=discord.ButtonStyle.primary)
     async def b3(self, interaction, button): await interaction.response.send_message("Cargo +25:", view=SingleRoleSelectView("role_25"), ephemeral=True)
-    
+
     @discord.ui.button(label="Adicionar Cargos Extras", style=discord.ButtonStyle.success)
     async def b4(self, interaction, button): await interaction.response.send_message("Selecione o cargo para ADICIONAR ao Registro:", view=AddRegRoleView(), ephemeral=True)
-    
+
     @discord.ui.button(label="Remover Cargos Extras", style=discord.ButtonStyle.danger)
     async def b5(self, interaction, button): 
         data = load_data()
@@ -104,17 +105,17 @@ class RegistroConfigView(discord.ui.View):
         if not available:
             await interaction.response.send_message("❌ Nenhum cargo extra registrado no momento.", ephemeral=True)
             return
-            
+
         options = []
         for role_id in available:
             role = interaction.guild.get_role(role_id)
             if role:
                 options.append(discord.SelectOption(label=role.name, value=str(role_id)))
-                
+
         if not options:
             await interaction.response.send_message("❌ Nenhum cargo válido para remover.", ephemeral=True)
             return
-            
+
         await interaction.response.send_message("Selecione o cargo para **REMOVER** do painel de registro:", view=RemoveRegRoleView(options), ephemeral=True)
 
 class TicketConfigView(discord.ui.View):
@@ -135,55 +136,68 @@ class TicketConfigView(discord.ui.View):
 class StatsConfigView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=120)
-    
+
     @discord.ui.button(label="Categoria: Total Membros", style=discord.ButtonStyle.primary)
     async def b1(self, interaction, button): 
         await interaction.response.send_message("Onde mostrar Total de Membros:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
-    
+
     @discord.ui.button(label="Categoria: Em Call", style=discord.ButtonStyle.primary)
     async def b2(self, interaction, button): 
         await interaction.response.send_message("Onde mostrar Pessoas em Call:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
-    
+
     @discord.ui.button(label="Canal de Voz pro Bot ficar", style=discord.ButtonStyle.secondary)
     async def b3(self, interaction, button): 
         await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
-    
+
     # === BOTÃO ATUALIZADO: FORÇAR CONEXÃO DO BOT ===
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
         voice_id = data.get("stats_voice_channel")
-        
+
         if not voice_id:
             await interaction.response.send_message("❌ Você precisa configurar o **Canal de Voz pro Bot ficar** primeiro!", ephemeral=True)
             return
-            
+
         guild = interaction.guild
         vc = guild.get_channel(voice_id)
-        
+
         if not vc or not isinstance(vc, discord.VoiceChannel):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
             return
-            
+
         # Pega a conexão atual do bot no servidor, se existir
         bot_voice = guild.voice_client
-        
+
         try:
             if bot_voice:
                 if bot_voice.channel.id == vc.id:
-                    # Já está no lugar certo
-                    await interaction.response.send_message(f"✅ O bot já está conectado e mutado na call {vc.mention}!", ephemeral=True)
+                    # Já está no lugar certo - garante áudio silencioso
+                    if not bot_voice.is_playing():
+                        from stats import SilenceAudio
+                        bot_voice.play(SilenceAudio())
+                    await interaction.response.send_message(f"✅ O bot já está conectado e mutado na call {vc.mention}! (Áudio silencioso ativo)", ephemeral=True)
                 else:
                     # Está em outra call, vamos mover
                     await bot_voice.move_to(vc)
+                    await asyncio.sleep(1)
+                    # Inicia áudio silencioso após mover
+                    if guild.voice_client and not guild.voice_client.is_playing():
+                        from stats import SilenceAudio
+                        guild.voice_client.play(SilenceAudio())
                     await guild.me.edit(mute=True, deafen=True)
-                    await interaction.response.send_message(f"✅ O bot foi movido para a call {vc.mention}!", ephemeral=True)
+                    await interaction.response.send_message(f"✅ O bot foi movido para a call {vc.mention}! (Keep-alive ativo 24/7)", ephemeral=True)
             else:
                 # Não está em nenhuma call, vamos conectar
                 await vc.connect()
+                await asyncio.sleep(1)
+                # Inicia áudio silencioso para evitar desconexão por inatividade
+                if guild.voice_client and not guild.voice_client.is_playing():
+                    from stats import SilenceAudio
+                    guild.voice_client.play(SilenceAudio())
                 await guild.me.edit(mute=True, deafen=True)
-                await interaction.response.send_message(f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}!", ephemeral=True)
-                
+                await interaction.response.send_message(f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}! (Keep-alive 24/7 ativado)", ephemeral=True)
+
         except Exception as e:
             await interaction.response.send_message(f"❌ Ocorreu um erro ao tentar gerenciar a call: {e}", ephemeral=True)
 
@@ -288,7 +302,7 @@ class RemoveRegRoleView(discord.ui.View):
     async def select_callback(self, interaction: discord.Interaction):
         role_id = int(interaction.data["values"][0])
         data = load_data()
-        
+
         if role_id in data.get("available_roles", []):
             data["available_roles"].remove(role_id)
             save_data(data)

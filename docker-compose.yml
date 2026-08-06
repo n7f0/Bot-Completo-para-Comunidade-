@@ -4,7 +4,14 @@ services:
   bot:
     build: .
     environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}   # ← Referência à variável do Portainer
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    # DNS confiável para evitar erro "Name or service not known" no Discord Voice
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    # Garante que o container tenha acesso à rede
+    network_mode: bridge

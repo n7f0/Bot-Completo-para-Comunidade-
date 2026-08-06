@@ -85,7 +85,6 @@ class ComandosPaginacaoView(discord.ui.View):
             color=0xff0000
         )
 
-        # Título e descrição globais na primeira página
         if self.current_page == 0:
             embed.title = data.get("comandos_title", "📋 Central de Comandos")
             embed.description = data.get("comandos_description", "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria.")

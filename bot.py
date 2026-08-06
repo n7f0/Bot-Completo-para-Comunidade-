@@ -23,6 +23,7 @@ class MeuBot(commands.Bot):
         await self.load_extension("cogs.ticket")
         await self.load_extension("cogs.regras")
         await self.load_extension("cogs.stats")
+        await self.load_extension("cogs.booster")  # NOVO
         
         try:
             await self.tree.sync()

@@ -11,3 +11,6 @@ services:
       - ./data:/app/data
     restart: unless-stopped
     network_mode: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4

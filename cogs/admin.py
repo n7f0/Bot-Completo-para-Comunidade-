@@ -149,7 +149,7 @@ class StatsConfigView(discord.ui.View):
     async def b3(self, interaction, button): 
         await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
 
-    # === BOTÃO ATUALIZADO: FORÇAR CONEXÃO DO BOT ===
+    # === BOTÃO SIMPLIFICADO: FORÇAR CONEXÃO DO BOT ===
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
@@ -166,58 +166,44 @@ class StatsConfigView(discord.ui.View):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
             return
 
-        # Responde imediatamente para não expirar a interação
         await interaction.response.send_message("🔊 Conectando o bot na call, aguarde...", ephemeral=True)
 
-        bot_voice = guild.voice_client
-
         try:
+            bot_voice = guild.voice_client
+
+            if bot_voice and bot_voice.channel.id == vc.id:
+                # Já está na call correta
+                await asyncio.sleep(2)
+                if bot_voice.is_connected() and not bot_voice.is_playing():
+                    from stats import SilenceAudio
+                    bot_voice.play(SilenceAudio())
+                await interaction.edit_original_response(content=f"✅ O bot já está na call {vc.mention}! (Áudio silencioso ativo)")
+                return
+
+            # Se está em outra call, desconecta primeiro
             if bot_voice:
-                if bot_voice.channel.id == vc.id:
-                    # Já está no lugar certo - garante áudio silencioso
-                    await asyncio.sleep(2)
-                    if bot_voice.is_connected() and not bot_voice.is_playing():
-                        from stats import SilenceAudio
-                        bot_voice.play(SilenceAudio())
-                    await interaction.edit_original_response(content=f"✅ O bot já está conectado e mutado na call {vc.mention}! (Áudio silencioso ativo)")
-                else:
-                    # Está em outra call, vamos mover
-                    await bot_voice.move_to(vc)
-                    await asyncio.sleep(4)  # Aguarda handshake após mover
-                    # Inicia áudio silencioso após mover
-                    if guild.voice_client and guild.voice_client.is_connected() and not guild.voice_client.is_playing():
-                        from stats import SilenceAudio
-                        guild.voice_client.play(SilenceAudio())
-                    await guild.me.edit(mute=True, deafen=True)
-                    await interaction.edit_original_response(content=f"✅ O bot foi movido para a call {vc.mention}! (Keep-alive ativo 24/7)")
-            else:
-                # Não está em nenhuma call, vamos conectar
-                # Desconecta forçado se houver resquício de conexão
-                if guild.voice_client:
-                    try:
-                        await guild.voice_client.disconnect(force=True)
-                    except:
-                        pass
-                    await asyncio.sleep(2)
+                try:
+                    await bot_voice.disconnect(force=True)
+                except:
+                    pass
+                await asyncio.sleep(3)
 
-                voice_client = await vc.connect(timeout=30.0, reconnect=True)
-                await asyncio.sleep(4)  # Aguarda handshake de voz completar
+            # Conecta na call correta
+            voice_client = await vc.connect(timeout=30.0, reconnect=True)
+            await asyncio.sleep(5)  # Aguarda handshake estabilizar
 
-                # Verifica se conectou de verdade
-                if not voice_client or not voice_client.is_connected():
-                    await interaction.edit_original_response(content=f"❌ O handshake de voz falhou. O bot tentará reconectar automaticamente em breve.")
-                    return
-
-                # Inicia áudio silencioso para evitar desconexão por inatividade
+            if voice_client and voice_client.is_connected():
+                await guild.me.edit(mute=True, deafen=True)
+                await asyncio.sleep(1)
                 if not voice_client.is_playing():
                     from stats import SilenceAudio
                     voice_client.play(SilenceAudio())
-
-                await guild.me.edit(mute=True, deafen=True)
-                await interaction.edit_original_response(content=f"✅ O bot entrou e foi mutado com sucesso na call {vc.mention}! (Keep-alive 24/7 ativado)")
+                await interaction.edit_original_response(content=f"✅ O bot entrou e foi mutado na call {vc.mention}! (Keep-alive 24/7 ativado)")
+            else:
+                await interaction.edit_original_response(content=f"⚠️ O handshake está em andamento. O bot tentará estabilizar automaticamente em até 60 segundos.")
 
         except Exception as e:
-            await interaction.edit_original_response(content=f"❌ Ocorreu um erro ao tentar gerenciar a call: {e}")
+            await interaction.edit_original_response(content=f"❌ Erro: {e}. A task automática tentará reconectar em breve.")
 
 
 # === MODAIS E VIEWS GENÉRICAS ===

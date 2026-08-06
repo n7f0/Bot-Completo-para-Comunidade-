@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instala dependências (sem modificar resolv.conf)
+# Instala dependências
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     libopus0 \

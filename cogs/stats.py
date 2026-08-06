@@ -2,12 +2,11 @@ import discord
 from discord.ext import commands, tasks
 from database import load_data
 import asyncio
+import socket
 
 # === GERADOR DE ÁUDIO SILENCIOSO ===
-# Impede que o Discord desconecte o bot por inatividade (idle timeout)
 class SilenceAudio(discord.AudioSource):
     def read(self):
-        # 20ms de silêncio PCM (stereo, 16-bit, 48000Hz) = 3840 bytes
         return b'\x00' * 3840
 
     def is_opus(self):
@@ -19,17 +18,16 @@ class StatsCog(commands.Cog):
         self.bot = bot
         self.update_stats.start()
         self.keep_alive_voice.start()
-        self._lock = asyncio.Lock()          # Garante apenas 1 operação de voz por vez
-        self._last_reconnect = 0             # Timestamp da última reconexão (cooldown)
-        self._cooldown_seconds = 60          # Cooldown mínimo entre reconexões (aumentado)
-        self._consecutive_failures = 0       # Contador de falhas consecutivas
-        self._first_run = True               # Flag para delay inicial
+        self._lock = asyncio.Lock()
+        self._last_reconnect = 0
+        self._cooldown_seconds = 60
+        self._consecutive_failures = 0
+        self._first_run = True
 
     def cog_unload(self):
         self.update_stats.cancel()
         self.keep_alive_voice.cancel()
 
-    # === TASK 1: Atualiza nomes das categorias a cada 6 minutos ===
     @tasks.loop(minutes=6)
     async def update_stats(self):
         await self.bot.wait_until_ready()
@@ -39,7 +37,6 @@ class StatsCog(commands.Cog):
         guild = self.bot.guilds[0]
         data = load_data()
 
-        # Categoria de Membros Totais
         cat_members_id = data.get("stats_cat_members")
         if cat_members_id:
             cat_members = guild.get_channel(cat_members_id)
@@ -51,7 +48,6 @@ class StatsCog(commands.Cog):
                     except Exception as e: 
                         print(f"[Stats] Erro categoria membros: {e}", flush=True)
 
-        # Categoria de Pessoas em Call
         cat_voice_id = data.get("stats_cat_voice")
         if cat_voice_id:
             cat_voice = guild.get_channel(cat_voice_id)
@@ -64,49 +60,65 @@ class StatsCog(commands.Cog):
                     except Exception as e: 
                         print(f"[Stats] Erro categoria voz: {e}", flush=True)
 
-    # === FUNÇÃO AUXILIAR: Conectar com retry interno ===
+    async def _test_udp_connectivity(self, hostname, port=443):
+        """Testa se consegue resolver hostname e conectar via UDP."""
+        try:
+            # Tenta resolver o hostname
+            ip = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+            print(f"[Keep-Alive] 🌐 DNS OK: {hostname} -> {ip}", flush=True)
+
+            # Tenta criar um socket UDP e enviar um pacote vazio (não envia nada, só testa)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(5)
+            sock.connect((ip, port))
+            sock.close()
+            print(f"[Keep-Alive] 🌐 UDP OK: conexão de saída funciona", flush=True)
+            return True
+        except Exception as e:
+            print(f"[Keep-Alive] 🌐 Teste de rede falhou: {e}", flush=True)
+            return False
+
     async def _connect_voice(self, guild, vc):
         """Conecta na call com retry interno do discord.py."""
         try:
-            # Verifica se o bot tem permissão para conectar e falar no canal
+            # Verifica permissão
             permissions = vc.permissions_for(guild.me)
             if not permissions.connect:
-                print(f"[Keep-Alive] ❌ Bot não tem permissão 'Conectar' no canal {vc.name}", flush=True)
+                print(f"[Keep-Alive] ❌ Sem permissão 'Conectar' em {vc.name}", flush=True)
                 return False
-            if not permissions.speak:
-                print(f"[Keep-Alive] ⚠️ Bot não tem permissão 'Falar' no canal {vc.name}", flush=True)
-                # Continua mesmo sem speak, pois vamos usar áudio silencioso
 
-            # Se já existe voice_client em qualquer estado, limpa primeiro
+            # Testa conectividade de rede antes de tentar
+            test_host = "discord.com"
+            network_ok = await self._test_udp_connectivity(test_host)
+            if not network_ok:
+                print(f"[Keep-Alive] ⚠️ Problema de rede detectado. Pulando tentativa.", flush=True)
+                self._consecutive_failures += 1
+                return False
+
+            # Limpa conexão anterior
             if guild.voice_client is not None:
                 try:
                     await guild.voice_client.disconnect(force=True)
                 except Exception:
                     pass
-                # Aguarda o discord.py limpar o estado interno completamente
                 await asyncio.sleep(5)
 
-            # Conecta — o discord.py 2.3.2 já faz retry automático internamente
             print(f"[Keep-Alive] Conectando em {vc.name}...", flush=True)
             voice_client = await vc.connect(timeout=30.0, reconnect=True, self_deaf=True)
 
-            # Aguarda o handshake estabilizar (pode levar vários segundos)
-            await asyncio.sleep(8)
+            # Aguarda handshake estabilizar
+            await asyncio.sleep(10)
 
             if voice_client and voice_client.is_connected():
-                # Muta o bot (self_deaf já fez o deafen, mas mutamos explicitamente)
                 try:
                     await guild.me.edit(mute=True)
                 except Exception:
                     pass
                 await asyncio.sleep(1)
-
-                # Inicia áudio silencioso
                 if not voice_client.is_playing():
                     voice_client.play(SilenceAudio())
-
                 print(f"[Keep-Alive] ✅ Conectado e com áudio silencioso em {vc.name}", flush=True)
-                self._consecutive_failures = 0  # Reseta contador de falhas
+                self._consecutive_failures = 0
                 return True
             else:
                 print(f"[Keep-Alive] ⚠️ Handshake não estabilizou.", flush=True)
@@ -118,16 +130,15 @@ class StatsCog(commands.Cog):
             self._consecutive_failures += 1
             return False
 
-    # === TASK 2: Keep-Alive — verifica a cada 60 segundos ===
     @tasks.loop(seconds=60)
     async def keep_alive_voice(self):
         await self.bot.wait_until_ready()
 
-        # Delay inicial na primeira execução (aguarda gateway estabilizar)
+        # Delay inicial na primeira execução
         if self._first_run:
             self._first_run = False
-            print("[Keep-Alive] ⏳ Aguardando 30 segundos antes da primeira verificação...", flush=True)
-            await asyncio.sleep(30)
+            print("[Keep-Alive] ⏳ Aguardando 60 segundos antes da primeira verificação...", flush=True)
+            await asyncio.sleep(60)
 
         if not self.bot.guilds:
             return
@@ -143,16 +154,14 @@ class StatsCog(commands.Cog):
         if not vc or not isinstance(vc, discord.VoiceChannel):
             return
 
-        # Lock garante que apenas uma operação de voz rode por vez
         if self._lock.locked():
             return
 
         async with self._lock:
             bot_voice = guild.voice_client
 
-            # === CASO 1: Bot NÃO está em nenhuma call ===
+            # CASO 1: Bot NÃO está em nenhuma call
             if bot_voice is None:
-                # Verifica cooldown para não spamar reconexões
                 now = asyncio.get_event_loop().time()
                 if now - self._last_reconnect < self._cooldown_seconds:
                     return
@@ -160,14 +169,13 @@ class StatsCog(commands.Cog):
 
                 success = await self._connect_voice(guild, vc)
 
-                # Se falhou muitas vezes seguidas, aumenta o cooldown exponencialmente
                 if not success and self._consecutive_failures >= 3:
-                    extra_delay = min(300, 60 * (2 ** (self._consecutive_failures - 3)))
+                    extra_delay = min(600, 60 * (2 ** (self._consecutive_failures - 3)))
                     print(f"[Keep-Alive] ⏸️ Muitas falhas. Aguardando {extra_delay}s extras...", flush=True)
                     self._last_reconnect = now + extra_delay
                 return
 
-            # === CASO 2: Bot está em OUTRA call ===
+            # CASO 2: Bot está em OUTRA call
             if bot_voice.channel.id != vc.id:
                 now = asyncio.get_event_loop().time()
                 if now - self._last_reconnect < self._cooldown_seconds:
@@ -177,7 +185,7 @@ class StatsCog(commands.Cog):
                 try:
                     print(f"[Keep-Alive] Movendo de {bot_voice.channel.name} para {vc.name}...", flush=True)
                     await bot_voice.move_to(vc)
-                    await asyncio.sleep(8)  # Aguarda handshake após mover
+                    await asyncio.sleep(10)
 
                     if guild.voice_client and guild.voice_client.is_connected():
                         try:
@@ -194,8 +202,7 @@ class StatsCog(commands.Cog):
                     self._consecutive_failures += 1
                 return
 
-            # === CASO 3: Bot está na call CORRETA ===
-            # Apenas garante que o áudio silencioso está ativo
+            # CASO 3: Bot está na call CORRETA
             if bot_voice.is_connected() and not bot_voice.is_playing():
                 try:
                     bot_voice.play(SilenceAudio())

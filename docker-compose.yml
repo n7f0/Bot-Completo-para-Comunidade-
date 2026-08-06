@@ -13,7 +13,6 @@ services:
       - 8.8.8.8
       - 8.8.4.4
       - 1.1.1.1
-    # Portas UDP necessárias para o Discord Voice (mídia RTP/RTCP)
-    # O Discord voice usa portas UDP dinâmicas, então mapeamos um range amplo
-    ports:
-      - "5000-5500:5000-5500/udp"
+    # NOTA: Não é necessário mapear portas UDP.
+    # O Discord Voice usa conexões UDP de SAÍDA (outbound),
+    # que o Docker já permite por padrão via NAT.

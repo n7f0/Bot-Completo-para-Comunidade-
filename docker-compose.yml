@@ -8,11 +8,7 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    # DNS confiável para evitar erro "Name or service not known" no Discord Voice
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 1.1.1.1
-    # NOTA: Não é necessário mapear portas UDP.
-    # O Discord Voice usa conexões UDP de SAÍDA (outbound),
-    # que o Docker já permite por padrão via NAT.
+    # network_mode: host dá ao container acesso DIRETO à rede do host.
+    # Isso resolve problemas de NAT/UDP que causam o erro 4006 no Discord Voice.
+    # NOTA: Só funciona em Linux. Se estiver no Windows/Mac, comente esta linha.
+    network_mode: host

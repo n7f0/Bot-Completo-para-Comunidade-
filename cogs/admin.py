@@ -53,7 +53,8 @@ class AdminMainView(discord.ui.View):
             discord.SelectOption(label="Recrutamento Staff", value="staff", emoji="🎓"),
             discord.SelectOption(label="Tellonym (Anônimo)", value="tellonym", emoji="👻"),
             discord.SelectOption(label="Instagram", value="instagram", emoji="📸"),
-            discord.SelectOption(label="Verificação", value="verify", emoji="✅", description="Configurar painel Verifique-se")
+            discord.SelectOption(label="Verificação", value="verify", emoji="✅"),
+            discord.SelectOption(label="Painel de Conselho", value="conselho", emoji="💡", description="Configurar painel de conselhos")
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -83,7 +84,8 @@ class AdminMainView(discord.ui.View):
             elif val == "staff": await interaction.response.send_message("🎓 **Recrutamento Staff**", view=StaffConfigView(), ephemeral=True)
             elif val == "tellonym": await interaction.response.send_message("👻 **Tellonym**", view=TellonymConfigView(), ephemeral=True)
             elif val == "instagram": await interaction.response.send_message("📸 **Instagram**", view=InstagramConfigView(), ephemeral=True)
-            elif val == "verify": await interaction.response.send_message("✅ **Verificação (Verifique-se)**", view=VerifyConfigView(), ephemeral=True)
+            elif val == "verify": await interaction.response.send_message("✅ **Verificação**", view=VerifyConfigView(), ephemeral=True)
+            elif val == "conselho": await interaction.response.send_message("💡 **Painel de Conselho**", view=ConselhoConfigView(), ephemeral=True)
         else:
             await interaction.followup.send("⏰ A interação expirou.", ephemeral=True)
 
@@ -107,12 +109,25 @@ class InstagramConfigView(discord.ui.View):
     async def b2(self, interaction, button): await interaction.response.send_message("Canal Feed Masc:", view=ChannelSelectView("instagram_post_channel_masc"), ephemeral=True)
     @discord.ui.button(label="Feed Feminino", style=discord.ButtonStyle.secondary)
     async def b3(self, interaction, button): await interaction.response.send_message("Canal Feed Fem:", view=ChannelSelectView("instagram_post_channel_fem"), ephemeral=True)
-    @discord.ui.button(label="Cargo Postador (Homem)", style=discord.ButtonStyle.primary)
-    async def b4(self, interaction, button): await interaction.response.send_message("Cargo para postar no feed masc:", view=SingleRoleSelectView("instagram_role_masc"), ephemeral=True)
-    @discord.ui.button(label="Cargo Postador (Mulher)", style=discord.ButtonStyle.primary)
-    async def b5(self, interaction, button): await interaction.response.send_message("Cargo para postar no feed fem:", view=SingleRoleSelectView("instagram_role_fem"), ephemeral=True)
+    @discord.ui.button(label="Feed Pets", style=discord.ButtonStyle.secondary)
+    async def b4(self, interaction, button): await interaction.response.send_message("Canal Feed Pets:", view=ChannelSelectView("instagram_post_channel_pet"), ephemeral=True)
+    @discord.ui.button(label="Cargo Homem", style=discord.ButtonStyle.primary)
+    async def b5(self, interaction, button): await interaction.response.send_message("Cargo para postar masc:", view=SingleRoleSelectView("instagram_role_masc"), ephemeral=True)
+    @discord.ui.button(label="Cargo Mulher", style=discord.ButtonStyle.primary)
+    async def b6(self, interaction, button): await interaction.response.send_message("Cargo para postar fem:", view=SingleRoleSelectView("instagram_role_fem"), ephemeral=True)
     @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
-    async def b6(self, interaction, button): await interaction.response.send_modal(InstagramImageModal())
+    async def b7(self, interaction, button): await interaction.response.send_modal(InstagramImageModal())
+
+class ConselhoConfigView(discord.ui.View):
+    def __init__(self): super().__init__(timeout=300)
+    @discord.ui.button(label="Canal do Painel", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Onde o painel de conselho vai ficar?", view=ChannelSelectView("conselho_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Categoria dos Chats", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Categoria dos canais temporários:", view=ChannelSelectView("conselho_category_id", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Cargo Responsável", style=discord.ButtonStyle.primary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Cargo que cuida dos conselhos:", view=SingleRoleSelectView("conselho_role_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
+    async def b4(self, interaction, button): await interaction.response.send_modal(ConselhoImageModal())
 
 class VerifyConfigView(discord.ui.View):
     def __init__(self): super().__init__(timeout=300)
@@ -206,6 +221,16 @@ class StatsConfigView(discord.ui.View):
     async def b3(self, interaction, button): await interaction.response.send_message("Canal:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
 
 # === MODAIS ===
+class ConselhoImageModal(discord.ui.Modal, title="Imagem do Conselho"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("conselho_image"), required=False)
+        self.add_item(self.img)
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data(); data["conselho_image"] = self.img.value; save_data(data)
+        await interaction.response.send_message("✅ Imagem do conselho salva!", ephemeral=True)
+
 class VerifyImageModal(discord.ui.Modal, title="Imagem da Verificação"):
     def __init__(self):
         super().__init__()

@@ -9,13 +9,25 @@ def load_data():
             "available_roles": [],
             "autorole_id": None,
             "welcome_channel_id": None,
-            "welcome_text": "Bem-vindo ao nosso servidor, {user}! Leia as regras e divirta-se.",
+            "welcome_text": (
+                "### 👋 1 · Boas-Vindas\n"
+                "Olá {user}, seja muito bem-vindo(a) ao nosso servidor!\n\n"
+                "### 📜 2 · Regras\n"
+                "Por favor, leia as regras para mantermos uma boa convivência.\n\n"
+                "### 💬 3 · Interaja\n"
+                "Fique à vontade para conversar, explorar os canais e fazer novas amizades!"
+            ),
             "welcome_image": "",
             "admin_image": "",
             "reg_image": "",
             "ticket_image": "",
             "rules_image": "",
-            "rules_text": "Escreva suas regras aqui...",
+            "rules_text": (
+                "### 🛑 1 · Respeito\n"
+                "Seja respeitoso com todos os membros. Não toleramos ofensas.\n\n"
+                "### 🚫 2 · Sem Spam\n"
+                "Evite enviar mensagens repetidas ou links não solicitados."
+            ),
             
             "role_16": None,
             "role_18": None,
@@ -34,20 +46,27 @@ def load_data():
             "stats_cat_voice": None,
             "stats_voice_channel": None,
 
-            "booster_title": "🚀 Impulsione o Servidor!",
+            "booster_title": "🚀 Booster · Impulsione o Servidor",
             "booster_description": (
-                "Ao impulsionar o servidor, você desbloqueia benefícios exclusivos:\n"
-                "• 🎨 Mais slots de emojis\n"
-                "• 🔊 Qualidade de áudio superior\n"
-                "• 📈 Upload de arquivos maiores\n"
-                "• 🏷️ Cargo especial de Booster\n\n"
+                "### ⭐ 1 · Benefícios Exclusivos\n"
+                "Ao impulsionar o servidor, você desbloqueia vantagens únicas.\n\n"
+                "### 🎨 2 · Mais Personalização\n"
+                "Desbloqueie mais slots de emojis e um cargo especial.\n\n"
+                "### 🔊 3 · Qualidade Superior\n"
+                "Áudio aprimorado nas calls e maior limite de upload de arquivos.\n\n"
+                "### 🚀 4 · Como Impulsionar\n"
                 "Clique no botão abaixo para impulsionar agora!"
             ),
             "booster_image": "",
             "booster_button_label": "⭐ Impulsionar Servidor",
 
-            "comandos_title": "📋 Central de Comandos",
-            "comandos_description": "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria.",
+            "comandos_title": "📋 Comandos · Central do Servidor",
+            "comandos_description": (
+                "### 🔎 1 · Navegação\n"
+                "Abaixo estão todos os comandos disponíveis no servidor.\n\n"
+                "### 📑 2 · Páginas\n"
+                "Use os botões abaixo para navegar entre as diferentes categorias."
+            ),
             "comandos_image": "",
             "comandos_channel_id": None
         }

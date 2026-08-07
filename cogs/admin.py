@@ -32,7 +32,7 @@ class AdminCog(commands.Cog):
 
 class AdminMainView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=300)  # 5 minutos de timeout
+        super().__init__(timeout=None)  # Precisa ser None: essa view é registrada como persistente (bot.add_view)
 
     @discord.ui.select(
         custom_id="master_admin_select",

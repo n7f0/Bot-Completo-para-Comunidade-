@@ -50,7 +50,8 @@ class AdminMainView(discord.ui.View):
             discord.SelectOption(label="Estatísticas e Calls", value="stats", emoji="📊", description="Painel de categorias em tempo real"),
             discord.SelectOption(label="Regras do Servidor", value="regras", emoji="📜", description="Escrever o texto das regras"),
             discord.SelectOption(label="Booster", value="booster", emoji="🚀", description="Configurar painel de impulsão"),
-            discord.SelectOption(label="Comandos", value="comandos", emoji="📋", description="Configurar painel de comandos")
+            discord.SelectOption(label="Comandos", value="comandos", emoji="📋", description="Configurar painel de comandos"),
+            discord.SelectOption(label="Overview & Moderação", value="overview", emoji="🛡️", description="Painel de bans, castigos e relatórios")
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -84,6 +85,8 @@ class AdminMainView(discord.ui.View):
                 await interaction.response.send_modal(BoosterConfigModal())
             elif val == "comandos":
                 await interaction.response.send_modal(ComandosConfigModal())
+            elif val == "overview":
+                await interaction.response.send_message("🛡️ **Configurações de Moderação (Overview)**", view=OverviewConfigView(), ephemeral=True)
         else:
             await interaction.followup.send("⏰ A interação expirou. Por favor, tente novamente.", ephemeral=True)
 
@@ -101,6 +104,18 @@ class GeralConfigView(discord.ui.View):
     @discord.ui.button(label="Texto Boas-Vindas", style=discord.ButtonStyle.primary)
     async def b4(self, interaction, button): await interaction.response.send_modal(TextoBoasVindasModal())
 
+class OverviewConfigView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=300)
+    @discord.ui.button(label="Cargo Staff (Acesso)", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Quem pode usar o /paineloverview?", view=SingleRoleSelectView("overview_role_id"), ephemeral=True)
+    @discord.ui.button(label="Canal de Relatórios", style=discord.ButtonStyle.primary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Para onde vão os logs?", view=ChannelSelectView("report_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Cargo Mutado", style=discord.ButtonStyle.danger)
+    async def b3(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Mute:", view=SingleRoleSelectView("mute_role_id"), ephemeral=True)
+    @discord.ui.button(label="Cargo Castigo", style=discord.ButtonStyle.danger)
+    async def b4(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Castigo:", view=SingleRoleSelectView("castigo_role_id"), ephemeral=True)
+
 class RegistroConfigView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=300)
@@ -110,10 +125,8 @@ class RegistroConfigView(discord.ui.View):
     async def b2(self, interaction, button): await interaction.response.send_message("Cargo +18:", view=SingleRoleSelectView("role_18"), ephemeral=True)
     @discord.ui.button(label="Cargo +25", style=discord.ButtonStyle.primary)
     async def b3(self, interaction, button): await interaction.response.send_message("Cargo +25:", view=SingleRoleSelectView("role_25"), ephemeral=True)
-
     @discord.ui.button(label="Adicionar Cargos Extras", style=discord.ButtonStyle.success)
     async def b4(self, interaction, button): await interaction.response.send_message("Selecione o cargo para ADICIONAR ao Registro:", view=AddRegRoleView(), ephemeral=True)
-
     @discord.ui.button(label="Remover Cargos Extras", style=discord.ButtonStyle.danger)
     async def b5(self, interaction, button): 
         data = load_data()
@@ -121,17 +134,10 @@ class RegistroConfigView(discord.ui.View):
         if not available:
             await interaction.response.send_message("❌ Nenhum cargo extra registrado no momento.", ephemeral=True)
             return
-
-        options = []
-        for role_id in available:
-            role = interaction.guild.get_role(role_id)
-            if role:
-                options.append(discord.SelectOption(label=role.name, value=str(role_id)))
-
+        options = [discord.SelectOption(label=interaction.guild.get_role(r).name, value=str(r)) for r in available if interaction.guild.get_role(r)]
         if not options:
             await interaction.response.send_message("❌ Nenhum cargo válido para remover.", ephemeral=True)
             return
-
         await interaction.response.send_message("Selecione o cargo para **REMOVER** do painel de registro:", view=RemoveRegRoleView(options), ephemeral=True)
 
 class TicketConfigView(discord.ui.View):
@@ -152,74 +158,51 @@ class TicketConfigView(discord.ui.View):
 class StatsConfigView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=300)
-
     @discord.ui.button(label="Categoria: Total Membros", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): 
-        await interaction.response.send_message("Onde mostrar Total de Membros:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
-
+    async def b1(self, interaction, button): await interaction.response.send_message("Onde mostrar Total de Membros:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
     @discord.ui.button(label="Categoria: Em Call", style=discord.ButtonStyle.primary)
-    async def b2(self, interaction, button): 
-        await interaction.response.send_message("Onde mostrar Pessoas em Call:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
-
+    async def b2(self, interaction, button): await interaction.response.send_message("Onde mostrar Pessoas em Call:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
     @discord.ui.button(label="Canal de Voz pro Bot ficar", style=discord.ButtonStyle.secondary)
-    async def b3(self, interaction, button): 
-        await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
-
+    async def b3(self, interaction, button): await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
     @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
     async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
         data = load_data()
         voice_id = data.get("stats_voice_channel")
-
         if not voice_id:
             await interaction.response.send_message("❌ Você precisa configurar o **Canal de Voz pro Bot ficar** primeiro!", ephemeral=True)
             return
-
         guild = interaction.guild
         vc = guild.get_channel(voice_id)
-
         if not vc or not isinstance(vc, discord.VoiceChannel):
             await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
             return
-
         permissions = vc.permissions_for(guild.me)
         if not permissions.connect:
             await interaction.response.send_message("❌ O bot não tem permissão para **conectar** neste canal de voz!", ephemeral=True)
             return
-
         await interaction.response.send_message("🔊 Conectando o bot na call, aguarde...", ephemeral=True)
-
         try:
             bot_voice = guild.voice_client
-
             if bot_voice and bot_voice.channel.id == vc.id:
                 await asyncio.sleep(2)
                 if bot_voice.is_connected() and not bot_voice.is_playing():
                     bot_voice.play(SilenceAudio())
                 await interaction.edit_original_response(content=f"✅ O bot já está na call {vc.mention}! (Áudio silencioso ativo)")
                 return
-
             if bot_voice:
-                try:
-                    await bot_voice.disconnect(force=True)
-                except:
-                    pass
+                try: await bot_voice.disconnect(force=True)
+                except: pass
                 await asyncio.sleep(5)
-
             voice_client = await vc.connect(timeout=20.0, reconnect=True, self_deaf=False)
             await asyncio.sleep(8)
-
             if voice_client and voice_client.is_connected():
-                try:
-                    await guild.me.edit(mute=True, deafen=True)
-                except:
-                    pass
+                try: await guild.me.edit(mute=True, deafen=True)
+                except: pass
                 await asyncio.sleep(1)
-                if not voice_client.is_playing():
-                    voice_client.play(SilenceAudio())
+                if not voice_client.is_playing(): voice_client.play(SilenceAudio())
                 await interaction.edit_original_response(content=f"✅ O bot entrou e foi mutado na call {vc.mention}! (Keep-alive 24/7 ativado)")
             else:
                 await interaction.edit_original_response(content=f"⚠️ O handshake está em andamento. O bot tentará estabilizar automaticamente em até 60 segundos.")
-
         except Exception as e:
             await interaction.edit_original_response(content=f"❌ Erro: {e}. A task automática tentará reconectar em breve.")
 
@@ -242,14 +225,9 @@ class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
 
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
-        data["admin_image"] = self.i1.value
-        data["rules_image"] = self.i2.value
-        data["reg_image"] = self.i3.value
-        data["ticket_image"] = self.i4.value
-        data["welcome_image"] = self.i5.value
-        data["booster_image"] = self.i6.value
-        data["comandos_image"] = self.i7.value
-        save_data(data)
+        data["admin_image"] = self.i1.value; data["rules_image"] = self.i2.value; data["reg_image"] = self.i3.value
+        data["ticket_image"] = self.i4.value; data["welcome_image"] = self.i5.value; data["booster_image"] = self.i6.value
+        data["comandos_image"] = self.i7.value; save_data(data)
         await interaction.response.send_message("✅ URLs salvas!", ephemeral=True)
 
 class TextoBoasVindasModal(discord.ui.Modal, title="Texto Boas-Vindas"):
@@ -296,32 +274,25 @@ class BoosterConfigModal(discord.ui.Modal, title="⚙️ Configuração do Paine
         self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("booster_image", ""), required=False)
         self.label_botao = discord.ui.TextInput(label="Texto do Botão", default=data.get("booster_button_label", "⭐ Impulsionar Servidor"), max_length=80)
         self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem); self.add_item(self.label_botao)
-
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
-        data["booster_title"] = self.titulo.value
-        data["booster_description"] = self.descricao.value
-        data["booster_image"] = self.imagem.value
-        data["booster_button_label"] = self.label_botao.value
-        save_data(data)
-        await interaction.response.send_message("✅ Configurações do Painel Booster salvas!", ephemeral=True)
+        data["booster_title"] = self.titulo.value; data["booster_description"] = self.descricao.value
+        data["booster_image"] = self.imagem.value; data["booster_button_label"] = self.label_botao.value
+        save_data(data); await interaction.response.send_message("✅ Configurações do Painel Booster salvas!", ephemeral=True)
 
 class ComandosConfigModal(discord.ui.Modal, title="⚙️ Configuração do Painel de Comandos"):
     def __init__(self):
         super().__init__()
         data = load_data()
         self.titulo = discord.ui.TextInput(label="Título do Painel", default=data.get("comandos_title", "📋 Comandos · Central do Servidor"), max_length=100)
-        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("comandos_description", "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria."), max_length=2000, required=False)
+        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("comandos_description", ""), max_length=2000, required=False)
         self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("comandos_image", ""), required=False)
         self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem)
-
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
-        data["comandos_title"] = self.titulo.value
-        data["comandos_description"] = self.descricao.value
+        data["comandos_title"] = self.titulo.value; data["comandos_description"] = self.descricao.value
         data["comandos_image"] = self.imagem.value
-        save_data(data)
-        await interaction.response.send_message("✅ Configurações do Painel de Comandos salvas!", ephemeral=True)
+        save_data(data); await interaction.response.send_message("✅ Configurações do Painel de Comandos salvas!", ephemeral=True)
 
 
 # === VIEWS GENÉRICAS ===
@@ -364,18 +335,13 @@ class RemoveRegRoleView(discord.ui.View):
         select = discord.ui.Select(placeholder="Selecione qual cargo remover...", options=options)
         select.callback = self.select_callback
         self.add_item(select)
-
     async def select_callback(self, interaction: discord.Interaction):
-        role_id = int(interaction.data["values"][0])
-        data = load_data()
-
+        role_id = int(interaction.data["values"][0]); data = load_data()
         if role_id in data.get("available_roles", []):
-            data["available_roles"].remove(role_id)
-            save_data(data)
+            data["available_roles"].remove(role_id); save_data(data)
             await interaction.response.edit_message(content="✅ Cargo removido da lista de registro com sucesso!", view=None)
         else:
             await interaction.response.edit_message(content="❌ Erro: Este cargo não foi encontrado na lista.", view=None)
-
 
 async def setup(bot):
     bot.add_view(AdminMainView()) 

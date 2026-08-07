@@ -51,7 +51,9 @@ class AdminMainView(discord.ui.View):
             discord.SelectOption(label="Regras do Servidor", value="regras", emoji="📜", description="Escrever o texto das regras"),
             discord.SelectOption(label="Booster", value="booster", emoji="🚀", description="Configurar painel de impulsão"),
             discord.SelectOption(label="Comandos", value="comandos", emoji="📋", description="Configurar painel de comandos"),
-            discord.SelectOption(label="Overview & Moderação", value="overview", emoji="🛡️", description="Painel de bans, castigos e relatórios")
+            discord.SelectOption(label="Overview & Moderação", value="overview", emoji="🛡️", description="Painel de bans, castigos e relatórios"),
+            discord.SelectOption(label="Recrutamento Staff", value="staff", emoji="🎓", description="Configurar painel de recrutamento"),
+            discord.SelectOption(label="Tellonym (Anônimo)", value="tellonym", emoji="👻", description="Configurar painel de mensagens anônimas")
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -87,6 +89,10 @@ class AdminMainView(discord.ui.View):
                 await interaction.response.send_modal(ComandosConfigModal())
             elif val == "overview":
                 await interaction.response.send_message("🛡️ **Configurações de Moderação (Overview)**", view=OverviewConfigView(), ephemeral=True)
+            elif val == "staff":
+                await interaction.response.send_message("🎓 **Configurações de Recrutamento Staff**", view=StaffConfigView(), ephemeral=True)
+            elif val == "tellonym":
+                await interaction.response.send_message("👻 **Configurações do Tellonym**", view=TellonymConfigView(), ephemeral=True)
         else:
             await interaction.followup.send("⏰ A interação expirou. Por favor, tente novamente.", ephemeral=True)
 
@@ -119,6 +125,28 @@ class OverviewConfigView(discord.ui.View):
     async def b5(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Castigo:", view=SingleRoleSelectView("castigo_role_id"), ephemeral=True)
     @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.secondary)
     async def b6(self, interaction, button): await interaction.response.send_modal(OverviewImageModal())
+
+class StaffConfigView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=300)
+    @discord.ui.button(label="Cargo Recrutador", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Quem receberá o ping nos tickets?", view=SingleRoleSelectView("staff_recruiter_role_id"), ephemeral=True)
+    @discord.ui.button(label="Categoria dos Tickets", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Onde os canais serão criados?", view=ChannelSelectView("staff_category_id", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.secondary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Onde o painel 'Seja Staff' ficará?", view=ChannelSelectView("staff_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
+    async def b4(self, interaction, button): await interaction.response.send_modal(StaffImageModal())
+
+class TellonymConfigView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=300)
+    @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Onde o botão do Tellonym ficará?", view=ChannelSelectView("tellonym_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Canal de Recebimento", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Para onde as mensagens anônimas serão enviadas?", view=ChannelSelectView("tellonym_send_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
+    async def b3(self, interaction, button): await interaction.response.send_modal(TellonymImageModal())
 
 class RegistroConfigView(discord.ui.View):
     def __init__(self):
@@ -223,6 +251,30 @@ class OverviewImageModal(discord.ui.Modal, title="Imagem do Overview"):
         data["overview_image"] = self.img.value
         save_data(data)
         await interaction.response.send_message("✅ Imagem do painel de moderação salva com sucesso!", ephemeral=True)
+
+class StaffImageModal(discord.ui.Modal, title="Imagem de Recrutamento"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("staff_image"), required=False)
+        self.add_item(self.img)
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data()
+        data["staff_image"] = self.img.value
+        save_data(data)
+        await interaction.response.send_message("✅ Imagem do painel de staff salva com sucesso!", ephemeral=True)
+
+class TellonymImageModal(discord.ui.Modal, title="Imagem do Tellonym"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("tellonym_image"), required=False)
+        self.add_item(self.img)
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data()
+        data["tellonym_image"] = self.img.value
+        save_data(data)
+        await interaction.response.send_message("✅ Imagem do painel Tellonym salva com sucesso!", ephemeral=True)
 
 class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
     def __init__(self):

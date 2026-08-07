@@ -23,7 +23,8 @@ class SilenceAudio(discord.FFmpegPCMAudio):
                 print(f"[Audio] Erro ao criar silence.mp3: {e}. Usando fallback PCM.")
                 super().__init__(silence_file)
                 return
-        super().__init__(silence_file, before_options="-reconnect 1 -reconnect_streamed 1")
+        # Inicialização corrigida: removido o before_options para arquivos locais
+        super().__init__(silence_file)
 
 
 class StatsCog(commands.Cog):

@@ -35,7 +35,7 @@ class BoosterCog(commands.Cog):
             )
         )
 
-                await interaction.channel.send(embed=embed, view=view)
+        await interaction.channel.send(embed=embed, view=view)
         await interaction.response.send_message("✅ Painel de Booster enviado com sucesso!", ephemeral=True)
 
 async def setup(bot):

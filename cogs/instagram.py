@@ -69,6 +69,11 @@ class InstagramMainView(discord.ui.View):
                 return
         await interaction.response.send_modal(InstaCaptionModal(self.bot, "fem"))
 
+    @discord.ui.button(label="Postar (Pet)", style=discord.ButtonStyle.success, emoji="🐾", custom_id="btn_insta_pet")
+    async def post_pet(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Pet não exige cargo nenhum
+        await interaction.response.send_modal(InstaCaptionModal(self.bot, "pet"))
+
 class InstaCaptionModal(discord.ui.Modal, title="Legenda da Postagem"):
     def __init__(self, bot, genero):
         super().__init__()
@@ -115,9 +120,12 @@ class InstaCaptionModal(discord.ui.Modal, title="Legenda da Postagem"):
         if self.genero == "masc":
             post_channel_id = data.get("instagram_post_channel_masc")
             nome_feed = "Masculino"
-        else:
+        elif self.genero == "fem":
             post_channel_id = data.get("instagram_post_channel_fem")
             nome_feed = "Feminino"
+        else:
+            post_channel_id = data.get("instagram_post_channel_pet")
+            nome_feed = "de Pets"
         
         if not post_channel_id:
             await interaction.followup.send(f"❌ O canal do feed {nome_feed} não foi configurado.", ephemeral=True)

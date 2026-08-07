@@ -82,10 +82,14 @@ def load_data():
             "staff_recruiter_role_id": None,
             "staff_image": "",
 
-            # NOVAS CONFIGURAÇÕES DO PAINEL TELLONYM
             "tellonym_channel_id": None,
             "tellonym_send_channel_id": None,
-            "tellonym_image": ""
+            "tellonym_image": "",
+
+            # NOVAS CONFIGURAÇÕES DO INSTAGRAM
+            "instagram_channel_id": None,
+            "instagram_post_channel_id": None,
+            "instagram_image": ""
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

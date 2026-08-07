@@ -86,10 +86,11 @@ def load_data():
             "tellonym_send_channel_id": None,
             "tellonym_image": "",
 
-            # INSTAGRAM COM CARGOS DE GÊNERO
+            # INSTAGRAM MASC, FEM E PET
             "instagram_channel_id": None,
             "instagram_post_channel_masc": None,
             "instagram_post_channel_fem": None,
+            "instagram_post_channel_pet": None,
             "instagram_role_masc": None,
             "instagram_role_fem": None,
             "instagram_image": "",
@@ -99,7 +100,13 @@ def load_data():
             "verify_category_id": None,
             "verify_staff_role_id": None,
             "verify_reward_role_id": None,
-            "verify_image": ""
+            "verify_image": "",
+
+            # PAINEL CONSELHO
+            "conselho_channel_id": None,
+            "conselho_category_id": None,
+            "conselho_role_id": None,
+            "conselho_image": ""
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

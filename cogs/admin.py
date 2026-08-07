@@ -18,8 +18,13 @@ class AdminCog(commands.Cog):
 
         data = load_data()
         embed = discord.Embed(
-            title="⚙️ Painel Central de Administração", 
-            description="Selecione no menu abaixo a categoria que deseja configurar. O painel de botões abrirá apenas para você de forma organizada.", 
+            title="⚙️ Administração · Painel Central", 
+            description=(
+                "### 📋 1 · Menu de Configuração\n"
+                "Selecione no menu abaixo a categoria que deseja configurar.\n\n"
+                "### 🔒 2 · Segurança\n"
+                "O painel de botões abrirá apenas para você de forma organizada e segura."
+            ),
             color=0xff0000
         )
         if data.get("admin_image"):
@@ -32,7 +37,7 @@ class AdminCog(commands.Cog):
 
 class AdminMainView(discord.ui.View):
     def __init__(self):
-        super().__init__(timeout=None)  # Precisa ser None: essa view é registrada como persistente (bot.add_view)
+        super().__init__(timeout=None)
 
     @discord.ui.select(
         custom_id="master_admin_select",
@@ -49,7 +54,6 @@ class AdminMainView(discord.ui.View):
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
-        # Verifica se a interação ainda é válida
         if not interaction.response.is_done():
             data = load_data()
             admin_id = data.get("admin_role_id")
@@ -81,7 +85,6 @@ class AdminMainView(discord.ui.View):
             elif val == "comandos":
                 await interaction.response.send_modal(ComandosConfigModal())
         else:
-            # Se a interação já foi respondida, avisa o usuário
             await interaction.followup.send("⏰ A interação expirou. Por favor, tente novamente.", ephemeral=True)
 
 
@@ -288,7 +291,7 @@ class BoosterConfigModal(discord.ui.Modal, title="⚙️ Configuração do Paine
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.titulo = discord.ui.TextInput(label="Título", default=data.get("booster_title", "🚀 Impulsione o Servidor!"), max_length=100)
+        self.titulo = discord.ui.TextInput(label="Título", default=data.get("booster_title", "🚀 Booster · Impulsione o Servidor"), max_length=100)
         self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("booster_description", ""), max_length=4000, required=False)
         self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("booster_image", ""), required=False)
         self.label_botao = discord.ui.TextInput(label="Texto do Botão", default=data.get("booster_button_label", "⭐ Impulsionar Servidor"), max_length=80)
@@ -307,7 +310,7 @@ class ComandosConfigModal(discord.ui.Modal, title="⚙️ Configuração do Pain
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.titulo = discord.ui.TextInput(label="Título do Painel", default=data.get("comandos_title", "📋 Central de Comandos"), max_length=100)
+        self.titulo = discord.ui.TextInput(label="Título do Painel", default=data.get("comandos_title", "📋 Comandos · Central do Servidor"), max_length=100)
         self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("comandos_description", "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria."), max_length=2000, required=False)
         self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("comandos_image", ""), required=False)
         self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem)

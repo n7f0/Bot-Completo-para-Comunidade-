@@ -101,10 +101,12 @@ class InstagramConfigView(discord.ui.View):
     def __init__(self): super().__init__(timeout=300)
     @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.primary)
     async def b1(self, interaction, button): await interaction.response.send_message("Onde o botão de Postar ficará?", view=ChannelSelectView("instagram_channel_id"), ephemeral=True)
-    @discord.ui.button(label="Canal de Postagens (Feed)", style=discord.ButtonStyle.secondary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Para onde vão as fotos enviadas?", view=ChannelSelectView("instagram_post_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Feed Masculino", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Para onde vão as fotos dos Homens?", view=ChannelSelectView("instagram_post_channel_masc"), ephemeral=True)
+    @discord.ui.button(label="Feed Feminino", style=discord.ButtonStyle.secondary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Para onde vão as fotos das Mulheres?", view=ChannelSelectView("instagram_post_channel_fem"), ephemeral=True)
     @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
-    async def b3(self, interaction, button): await interaction.response.send_modal(InstagramImageModal())
+    async def b4(self, interaction, button): await interaction.response.send_modal(InstagramImageModal())
 
 class OverviewConfigView(discord.ui.View):
     def __init__(self): super().__init__(timeout=300)

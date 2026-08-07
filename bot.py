@@ -34,7 +34,8 @@ class MeuBot(commands.Bot):
             await self.load_extension("cogs.staff")
             await self.load_extension("cogs.tellonym")
             await self.load_extension("cogs.instagram")
-            await self.load_extension("cogs.verify") # <-- Extensão de verificação
+            await self.load_extension("cogs.verify")
+            await self.load_extension("cogs.conselho") # <-- Nova extensão de conselho
             print("✅ Todas as extensões carregadas!", flush=True)
         except Exception as e:
             print(f"❌ Erro ao carregar extensões: {e}", flush=True)

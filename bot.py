@@ -31,7 +31,9 @@ class MeuBot(commands.Bot):
             await self.load_extension("cogs.stats")
             await self.load_extension("cogs.booster")
             await self.load_extension("cogs.comandos")
-            await self.load_extension("cogs.overview") # <-- Nova cog adicionada aqui!
+            await self.load_extension("cogs.overview")
+            await self.load_extension("cogs.staff")
+            await self.load_extension("cogs.tellonym")
             print("✅ Todas as extensões carregadas!", flush=True)
         except Exception as e:
             print(f"❌ Erro ao carregar extensões: {e}", flush=True)

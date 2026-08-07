@@ -26,7 +26,7 @@ class InstagramCog(commands.Cog):
             title="📸 Instagram · Poste suas fotos!",
             description=(
                 "### 📷 1 · Compartilhe Momentos\n"
-                "Clique no botão abaixo para postar uma nova foto no nosso feed.\n\n"
+                "Escolha o seu feed no botão abaixo para postar uma nova foto.\n\n"
                 "### ❤️ 2 · Interaja\n"
                 "Curta as fotos e deixe comentários bacanas nas publicações da galera!"
             ),
@@ -45,13 +45,18 @@ class InstagramMainView(discord.ui.View):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="Nova Postagem", style=discord.ButtonStyle.primary, emoji="📸", custom_id="btn_insta_post")
-    async def post_photo(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(InstaCreateModal())
+    @discord.ui.button(label="Postar (Homem)", style=discord.ButtonStyle.primary, emoji="👨", custom_id="btn_insta_masc")
+    async def post_masc(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(InstaCreateModal("masc"))
+        
+    @discord.ui.button(label="Postar (Mulher)", style=discord.ButtonStyle.danger, emoji="👩", custom_id="btn_insta_fem")
+    async def post_fem(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(InstaCreateModal("fem"))
 
 class InstaCreateModal(discord.ui.Modal, title="Criar Postagem"):
-    def __init__(self):
+    def __init__(self, genero):
         super().__init__()
+        self.genero = genero
         self.imagem = discord.ui.TextInput(
             label="URL da Imagem (Obrigatório)",
             placeholder="Cole o link da sua foto (ex: termina em .png, .jpg)",
@@ -69,15 +74,22 @@ class InstaCreateModal(discord.ui.Modal, title="Criar Postagem"):
 
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
-        post_channel_id = data.get("instagram_post_channel_id")
+        
+        # Define para qual canal vai com base no botão clicado
+        if self.genero == "masc":
+            post_channel_id = data.get("instagram_post_channel_masc")
+            nome_feed = "Masculino"
+        else:
+            post_channel_id = data.get("instagram_post_channel_fem")
+            nome_feed = "Feminino"
         
         if not post_channel_id:
-            await interaction.response.send_message("❌ O canal do feed do Instagram não foi configurado no /paineladmin.", ephemeral=True)
+            await interaction.response.send_message(f"❌ O canal do feed {nome_feed} não foi configurado no /paineladmin.", ephemeral=True)
             return
             
         post_channel = interaction.guild.get_channel(post_channel_id)
         if not post_channel:
-            await interaction.response.send_message("❌ O canal do feed configurado não foi encontrado.", ephemeral=True)
+            await interaction.response.send_message(f"❌ O canal do feed {nome_feed} configurado não foi encontrado.", ephemeral=True)
             return
 
         # Monta a postagem estilo Instagram
@@ -91,7 +103,7 @@ class InstaCreateModal(discord.ui.Modal, title="Criar Postagem"):
         embed.set_footer(text=f"AuthorID: {interaction.user.id}")
 
         await post_channel.send(embed=embed, view=InstaPostView())
-        await interaction.response.send_message("✅ Sua foto foi postada com sucesso no feed!", ephemeral=True)
+        await interaction.response.send_message(f"✅ Sua foto foi postada com sucesso no feed {nome_feed}!", ephemeral=True)
 
 class InstaPostView(discord.ui.View):
     def __init__(self):

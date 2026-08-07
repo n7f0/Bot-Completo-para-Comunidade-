@@ -70,11 +70,12 @@ def load_data():
             "comandos_image": "",
             "comandos_channel_id": None,
 
-            # NOVAS CONFIGURAÇÕES DO PAINEL OVERVIEW
             "overview_role_id": None,
             "report_channel_id": None,
             "mute_role_id": None,
-            "castigo_role_id": None
+            "castigo_role_id": None,
+            "overview_image": "",
+            "overview_channel_id": None
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

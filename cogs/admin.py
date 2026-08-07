@@ -108,13 +108,17 @@ class OverviewConfigView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=300)
     @discord.ui.button(label="Cargo Staff (Acesso)", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Quem pode usar o /paineloverview?", view=SingleRoleSelectView("overview_role_id"), ephemeral=True)
+    async def b1(self, interaction, button): await interaction.response.send_message("Quem pode usar o painel?", view=SingleRoleSelectView("overview_role_id"), ephemeral=True)
     @discord.ui.button(label="Canal de Relatórios", style=discord.ButtonStyle.primary)
     async def b2(self, interaction, button): await interaction.response.send_message("Para onde vão os logs?", view=ChannelSelectView("report_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.primary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Onde o painel de moderação vai ficar fixo?", view=ChannelSelectView("overview_channel_id"), ephemeral=True)
     @discord.ui.button(label="Cargo Mutado", style=discord.ButtonStyle.danger)
-    async def b3(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Mute:", view=SingleRoleSelectView("mute_role_id"), ephemeral=True)
+    async def b4(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Mute:", view=SingleRoleSelectView("mute_role_id"), ephemeral=True)
     @discord.ui.button(label="Cargo Castigo", style=discord.ButtonStyle.danger)
-    async def b4(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Castigo:", view=SingleRoleSelectView("castigo_role_id"), ephemeral=True)
+    async def b5(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Castigo:", view=SingleRoleSelectView("castigo_role_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.secondary)
+    async def b6(self, interaction, button): await interaction.response.send_modal(OverviewImageModal())
 
 class RegistroConfigView(discord.ui.View):
     def __init__(self):
@@ -208,6 +212,18 @@ class StatsConfigView(discord.ui.View):
 
 
 # === MODAIS ===
+class OverviewImageModal(discord.ui.Modal, title="Imagem do Overview"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("overview_image"), required=False)
+        self.add_item(self.img)
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data()
+        data["overview_image"] = self.img.value
+        save_data(data)
+        await interaction.response.send_message("✅ Imagem do painel de moderação salva com sucesso!", ephemeral=True)
+
 class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
     def __init__(self):
         super().__init__()
@@ -217,17 +233,13 @@ class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
         self.i3 = discord.ui.TextInput(label="Painel de Registro", default=data.get("reg_image"), required=False)
         self.i4 = discord.ui.TextInput(label="Painel de Ticket", default=data.get("ticket_image"), required=False)
         self.i5 = discord.ui.TextInput(label="Boas Vindas (Chat)", default=data.get("welcome_image"), required=False)
-        self.i6 = discord.ui.TextInput(label="Painel Booster", default=data.get("booster_image"), required=False)
-        self.i7 = discord.ui.TextInput(label="Painel Comandos", default=data.get("comandos_image"), required=False)
         self.add_item(self.i1); self.add_item(self.i2); self.add_item(self.i3)
-        self.add_item(self.i4); self.add_item(self.i5); self.add_item(self.i6)
-        self.add_item(self.i7)
+        self.add_item(self.i4); self.add_item(self.i5)
 
     async def on_submit(self, interaction: discord.Interaction):
         data = load_data()
         data["admin_image"] = self.i1.value; data["rules_image"] = self.i2.value; data["reg_image"] = self.i3.value
-        data["ticket_image"] = self.i4.value; data["welcome_image"] = self.i5.value; data["booster_image"] = self.i6.value
-        data["comandos_image"] = self.i7.value; save_data(data)
+        data["ticket_image"] = self.i4.value; data["welcome_image"] = self.i5.value; save_data(data)
         await interaction.response.send_message("✅ URLs salvas!", ephemeral=True)
 
 class TextoBoasVindasModal(discord.ui.Modal, title="Texto Boas-Vindas"):

@@ -5,7 +5,6 @@ from database import load_data, save_data
 import asyncio
 from .stats import SilenceAudio
 
-
 class AdminCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -34,7 +33,6 @@ class AdminCog(commands.Cog):
         await interaction.channel.send(embed=embed, view=view)
         await interaction.response.send_message("✅ Painel organizado fixado!", ephemeral=True)
 
-
 class AdminMainView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -43,17 +41,18 @@ class AdminMainView(discord.ui.View):
         custom_id="master_admin_select",
         placeholder="Selecione o que deseja configurar...",
         options=[
-            discord.SelectOption(label="Configurações Gerais", value="geral", emoji="⚙️", description="Cargo Admin, Autorole e Boas-vindas"),
-            discord.SelectOption(label="Imagens (URLs)", value="imagens", emoji="🖼️", description="Colar links das imagens de todos os painéis"),
-            discord.SelectOption(label="Registro e Idades", value="registro", emoji="📋", description="Configurar cargos do /painelreg"),
-            discord.SelectOption(label="Central de Tickets", value="tickets", emoji="🎫", description="Editar categorias e nomes de tickets"),
-            discord.SelectOption(label="Estatísticas e Calls", value="stats", emoji="📊", description="Painel de categorias em tempo real"),
-            discord.SelectOption(label="Regras do Servidor", value="regras", emoji="📜", description="Escrever o texto das regras"),
-            discord.SelectOption(label="Booster", value="booster", emoji="🚀", description="Configurar painel de impulsão"),
-            discord.SelectOption(label="Comandos", value="comandos", emoji="📋", description="Configurar painel de comandos"),
-            discord.SelectOption(label="Overview & Moderação", value="overview", emoji="🛡️", description="Painel de bans, castigos e relatórios"),
-            discord.SelectOption(label="Recrutamento Staff", value="staff", emoji="🎓", description="Configurar painel de recrutamento"),
-            discord.SelectOption(label="Tellonym (Anônimo)", value="tellonym", emoji="👻", description="Configurar painel de mensagens anônimas")
+            discord.SelectOption(label="Configurações Gerais", value="geral", emoji="⚙️"),
+            discord.SelectOption(label="Imagens (URLs)", value="imagens", emoji="🖼️"),
+            discord.SelectOption(label="Registro e Idades", value="registro", emoji="📋"),
+            discord.SelectOption(label="Central de Tickets", value="tickets", emoji="🎫"),
+            discord.SelectOption(label="Estatísticas e Calls", value="stats", emoji="📊"),
+            discord.SelectOption(label="Regras do Servidor", value="regras", emoji="📜"),
+            discord.SelectOption(label="Booster", value="booster", emoji="🚀"),
+            discord.SelectOption(label="Comandos", value="comandos", emoji="📋"),
+            discord.SelectOption(label="Overview & Moderação", value="overview", emoji="🛡️"),
+            discord.SelectOption(label="Recrutamento Staff", value="staff", emoji="🎓"),
+            discord.SelectOption(label="Tellonym (Anônimo)", value="tellonym", emoji="👻"),
+            discord.SelectOption(label="Instagram", value="instagram", emoji="📸", description="Configurar canais do Instagram")
         ]
     )
     async def select_callback(self, interaction: discord.Interaction, select: discord.ui.Select):
@@ -67,40 +66,28 @@ class AdminMainView(discord.ui.View):
                     tem_permissao = True
 
             if not tem_permissao:
-                await interaction.response.send_message("❌ Você não tem permissão para usar o painel.", ephemeral=True)
+                await interaction.response.send_message("❌ Você não tem permissão.", ephemeral=True)
                 return
 
             val = select.values[0]
-            if val == "geral":
-                await interaction.response.send_message("⚙️ **Configurações Gerais**", view=GeralConfigView(), ephemeral=True)
-            elif val == "imagens":
-                await interaction.response.send_modal(ImagensModal())
-            elif val == "registro":
-                await interaction.response.send_message("📋 **Configurações de Registro**", view=RegistroConfigView(), ephemeral=True)
-            elif val == "tickets":
-                await interaction.response.send_message("🎫 **Configurações de Tickets**", view=TicketConfigView(), ephemeral=True)
-            elif val == "stats":
-                await interaction.response.send_message("📊 **Configurações de Estatísticas**", view=StatsConfigView(), ephemeral=True)
-            elif val == "regras":
-                await interaction.response.send_modal(RegrasTextModal())
-            elif val == "booster":
-                await interaction.response.send_modal(BoosterConfigModal())
-            elif val == "comandos":
-                await interaction.response.send_modal(ComandosConfigModal())
-            elif val == "overview":
-                await interaction.response.send_message("🛡️ **Configurações de Moderação (Overview)**", view=OverviewConfigView(), ephemeral=True)
-            elif val == "staff":
-                await interaction.response.send_message("🎓 **Configurações de Recrutamento Staff**", view=StaffConfigView(), ephemeral=True)
-            elif val == "tellonym":
-                await interaction.response.send_message("👻 **Configurações do Tellonym**", view=TellonymConfigView(), ephemeral=True)
+            if val == "geral": await interaction.response.send_message("⚙️ **Configurações Gerais**", view=GeralConfigView(), ephemeral=True)
+            elif val == "imagens": await interaction.response.send_modal(ImagensModal())
+            elif val == "registro": await interaction.response.send_message("📋 **Configurações de Registro**", view=RegistroConfigView(), ephemeral=True)
+            elif val == "tickets": await interaction.response.send_message("🎫 **Configurações de Tickets**", view=TicketConfigView(), ephemeral=True)
+            elif val == "stats": await interaction.response.send_message("📊 **Configurações de Estatísticas**", view=StatsConfigView(), ephemeral=True)
+            elif val == "regras": await interaction.response.send_modal(RegrasTextModal())
+            elif val == "booster": await interaction.response.send_modal(BoosterConfigModal())
+            elif val == "comandos": await interaction.response.send_modal(ComandosConfigModal())
+            elif val == "overview": await interaction.response.send_message("🛡️ **Overview**", view=OverviewConfigView(), ephemeral=True)
+            elif val == "staff": await interaction.response.send_message("🎓 **Recrutamento Staff**", view=StaffConfigView(), ephemeral=True)
+            elif val == "tellonym": await interaction.response.send_message("👻 **Tellonym**", view=TellonymConfigView(), ephemeral=True)
+            elif val == "instagram": await interaction.response.send_message("📸 **Instagram**", view=InstagramConfigView(), ephemeral=True)
         else:
-            await interaction.followup.send("⏰ A interação expirou. Por favor, tente novamente.", ephemeral=True)
-
+            await interaction.followup.send("⏰ A interação expirou.", ephemeral=True)
 
 # === SUB-MENUS ===
 class GeralConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
+    def __init__(self): super().__init__(timeout=300)
     @discord.ui.button(label="Cargo Admin", style=discord.ButtonStyle.secondary)
     async def b1(self, interaction, button): await interaction.response.send_message("Cargo Admin:", view=SingleRoleSelectView("admin_role_id"), ephemeral=True)
     @discord.ui.button(label="Cargo Automático", style=discord.ButtonStyle.secondary)
@@ -110,171 +97,133 @@ class GeralConfigView(discord.ui.View):
     @discord.ui.button(label="Texto Boas-Vindas", style=discord.ButtonStyle.primary)
     async def b4(self, interaction, button): await interaction.response.send_modal(TextoBoasVindasModal())
 
-class OverviewConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
-    @discord.ui.button(label="Cargo Staff (Acesso)", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Quem pode usar o painel?", view=SingleRoleSelectView("overview_role_id"), ephemeral=True)
-    @discord.ui.button(label="Canal de Relatórios", style=discord.ButtonStyle.primary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Para onde vão os logs?", view=ChannelSelectView("report_channel_id"), ephemeral=True)
+class InstagramConfigView(discord.ui.View):
+    def __init__(self): super().__init__(timeout=300)
     @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.primary)
-    async def b3(self, interaction, button): await interaction.response.send_message("Onde o painel de moderação vai ficar fixo?", view=ChannelSelectView("overview_channel_id"), ephemeral=True)
-    @discord.ui.button(label="Cargo Mutado", style=discord.ButtonStyle.danger)
-    async def b4(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Mute:", view=SingleRoleSelectView("mute_role_id"), ephemeral=True)
-    @discord.ui.button(label="Cargo Castigo", style=discord.ButtonStyle.danger)
-    async def b5(self, interaction, button): await interaction.response.send_message("Cargo que será dado no Castigo:", view=SingleRoleSelectView("castigo_role_id"), ephemeral=True)
-    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.secondary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Onde o botão de Postar ficará?", view=ChannelSelectView("instagram_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Canal de Postagens (Feed)", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Para onde vão as fotos enviadas?", view=ChannelSelectView("instagram_post_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
+    async def b3(self, interaction, button): await interaction.response.send_modal(InstagramImageModal())
+
+class OverviewConfigView(discord.ui.View):
+    def __init__(self): super().__init__(timeout=300)
+    @discord.ui.button(label="Cargo Staff", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Acesso:", view=SingleRoleSelectView("overview_role_id"), ephemeral=True)
+    @discord.ui.button(label="Relatórios", style=discord.ButtonStyle.primary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Logs:", view=ChannelSelectView("report_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Painel Fixo", style=discord.ButtonStyle.primary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Painel:", view=ChannelSelectView("overview_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Mutado", style=discord.ButtonStyle.danger)
+    async def b4(self, interaction, button): await interaction.response.send_message("Cargo:", view=SingleRoleSelectView("mute_role_id"), ephemeral=True)
+    @discord.ui.button(label="Castigo", style=discord.ButtonStyle.danger)
+    async def b5(self, interaction, button): await interaction.response.send_message("Cargo:", view=SingleRoleSelectView("castigo_role_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem", style=discord.ButtonStyle.secondary)
     async def b6(self, interaction, button): await interaction.response.send_modal(OverviewImageModal())
 
 class StaffConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
-    @discord.ui.button(label="Cargo Recrutador", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Quem receberá o ping nos tickets?", view=SingleRoleSelectView("staff_recruiter_role_id"), ephemeral=True)
-    @discord.ui.button(label="Categoria dos Tickets", style=discord.ButtonStyle.secondary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Onde os canais serão criados?", view=ChannelSelectView("staff_category_id", discord.ChannelType.category), ephemeral=True)
-    @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.secondary)
-    async def b3(self, interaction, button): await interaction.response.send_message("Onde o painel 'Seja Staff' ficará?", view=ChannelSelectView("staff_channel_id"), ephemeral=True)
-    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
+    def __init__(self): super().__init__(timeout=300)
+    @discord.ui.button(label="Recrutador", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Cargo:", view=SingleRoleSelectView("staff_recruiter_role_id"), ephemeral=True)
+    @discord.ui.button(label="Categoria", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Categoria:", view=ChannelSelectView("staff_category_id", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Painel", style=discord.ButtonStyle.secondary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Painel:", view=ChannelSelectView("staff_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem", style=discord.ButtonStyle.success)
     async def b4(self, interaction, button): await interaction.response.send_modal(StaffImageModal())
 
 class TellonymConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
-    @discord.ui.button(label="Canal do Painel Fixo", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Onde o botão do Tellonym ficará?", view=ChannelSelectView("tellonym_channel_id"), ephemeral=True)
-    @discord.ui.button(label="Canal de Recebimento", style=discord.ButtonStyle.secondary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Para onde as mensagens anônimas serão enviadas?", view=ChannelSelectView("tellonym_send_channel_id"), ephemeral=True)
-    @discord.ui.button(label="Imagem do Painel", style=discord.ButtonStyle.success)
+    def __init__(self): super().__init__(timeout=300)
+    @discord.ui.button(label="Canal do Painel", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Onde ficará o botão?", view=ChannelSelectView("tellonym_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Canal de Envio", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Onde as mensagens vão?", view=ChannelSelectView("tellonym_send_channel_id"), ephemeral=True)
+    @discord.ui.button(label="Imagem", style=discord.ButtonStyle.success)
     async def b3(self, interaction, button): await interaction.response.send_modal(TellonymImageModal())
 
 class RegistroConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
+    def __init__(self): super().__init__(timeout=300)
     @discord.ui.button(label="Cargo +16", style=discord.ButtonStyle.primary)
     async def b1(self, interaction, button): await interaction.response.send_message("Cargo +16:", view=SingleRoleSelectView("role_16"), ephemeral=True)
     @discord.ui.button(label="Cargo +18", style=discord.ButtonStyle.primary)
     async def b2(self, interaction, button): await interaction.response.send_message("Cargo +18:", view=SingleRoleSelectView("role_18"), ephemeral=True)
     @discord.ui.button(label="Cargo +25", style=discord.ButtonStyle.primary)
     async def b3(self, interaction, button): await interaction.response.send_message("Cargo +25:", view=SingleRoleSelectView("role_25"), ephemeral=True)
-    @discord.ui.button(label="Adicionar Cargos Extras", style=discord.ButtonStyle.success)
-    async def b4(self, interaction, button): await interaction.response.send_message("Selecione o cargo para ADICIONAR ao Registro:", view=AddRegRoleView(), ephemeral=True)
-    @discord.ui.button(label="Remover Cargos Extras", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="Adicionar Extras", style=discord.ButtonStyle.success)
+    async def b4(self, interaction, button): await interaction.response.send_message("Cargo extra:", view=AddRegRoleView(), ephemeral=True)
+    @discord.ui.button(label="Remover Extras", style=discord.ButtonStyle.danger)
     async def b5(self, interaction, button): 
         data = load_data()
         available = data.get("available_roles", [])
         if not available:
-            await interaction.response.send_message("❌ Nenhum cargo extra registrado no momento.", ephemeral=True)
+            await interaction.response.send_message("❌ Nenhum cargo extra registrado.", ephemeral=True)
             return
         options = [discord.SelectOption(label=interaction.guild.get_role(r).name, value=str(r)) for r in available if interaction.guild.get_role(r)]
-        if not options:
-            await interaction.response.send_message("❌ Nenhum cargo válido para remover.", ephemeral=True)
-            return
-        await interaction.response.send_message("Selecione o cargo para **REMOVER** do painel de registro:", view=RemoveRegRoleView(options), ephemeral=True)
+        if not options: return
+        await interaction.response.send_message("Selecione para **REMOVER**:", view=RemoveRegRoleView(options), ephemeral=True)
 
 class TicketConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
-    @discord.ui.button(label="Nomes dos Botões", style=discord.ButtonStyle.primary)
+    def __init__(self): super().__init__(timeout=300)
+    @discord.ui.button(label="Nomes Botões", style=discord.ButtonStyle.primary)
     async def b_names(self, interaction, button): await interaction.response.send_modal(TicketNamesModal())
-    @discord.ui.button(label="Cat: Denúncias", style=discord.ButtonStyle.secondary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Categoria Denúncias:", view=ChannelSelectView("ticket_cat_denuncia", discord.ChannelType.category), ephemeral=True)
-    @discord.ui.button(label="Cat: Parcerias", style=discord.ButtonStyle.secondary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Categoria Parcerias:", view=ChannelSelectView("ticket_cat_parceria", discord.ChannelType.category), ephemeral=True)
-    @discord.ui.button(label="Cat: Compras", style=discord.ButtonStyle.secondary)
-    async def b3(self, interaction, button): await interaction.response.send_message("Categoria Compras:", view=ChannelSelectView("ticket_cat_compra", discord.ChannelType.category), ephemeral=True)
-    @discord.ui.button(label="Cat: Dúvidas", style=discord.ButtonStyle.secondary)
-    async def b4(self, interaction, button): await interaction.response.send_message("Categoria Dúvidas:", view=ChannelSelectView("ticket_cat_duvida", discord.ChannelType.category), ephemeral=True)
-
+    @discord.ui.button(label="Denúncias", style=discord.ButtonStyle.secondary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Categoria:", view=ChannelSelectView("ticket_cat_denuncia", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Parcerias", style=discord.ButtonStyle.secondary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Categoria:", view=ChannelSelectView("ticket_cat_parceria", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Compras", style=discord.ButtonStyle.secondary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Categoria:", view=ChannelSelectView("ticket_cat_compra", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Dúvidas", style=discord.ButtonStyle.secondary)
+    async def b4(self, interaction, button): await interaction.response.send_message("Categoria:", view=ChannelSelectView("ticket_cat_duvida", discord.ChannelType.category), ephemeral=True)
 
 class StatsConfigView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
-    @discord.ui.button(label="Categoria: Total Membros", style=discord.ButtonStyle.primary)
-    async def b1(self, interaction, button): await interaction.response.send_message("Onde mostrar Total de Membros:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
-    @discord.ui.button(label="Categoria: Em Call", style=discord.ButtonStyle.primary)
-    async def b2(self, interaction, button): await interaction.response.send_message("Onde mostrar Pessoas em Call:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
-    @discord.ui.button(label="Canal de Voz pro Bot ficar", style=discord.ButtonStyle.secondary)
-    async def b3(self, interaction, button): await interaction.response.send_message("Canal pro bot entrar mutado:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
-    @discord.ui.button(label="Forçar Bot na Call", style=discord.ButtonStyle.success, emoji="🔊")
-    async def b4(self, interaction: discord.Interaction, button: discord.ui.Button):
-        data = load_data()
-        voice_id = data.get("stats_voice_channel")
-        if not voice_id:
-            await interaction.response.send_message("❌ Você precisa configurar o **Canal de Voz pro Bot ficar** primeiro!", ephemeral=True)
-            return
-        guild = interaction.guild
-        vc = guild.get_channel(voice_id)
-        if not vc or not isinstance(vc, discord.VoiceChannel):
-            await interaction.response.send_message("❌ O canal configurado não foi encontrado. Configure novamente.", ephemeral=True)
-            return
-        permissions = vc.permissions_for(guild.me)
-        if not permissions.connect:
-            await interaction.response.send_message("❌ O bot não tem permissão para **conectar** neste canal de voz!", ephemeral=True)
-            return
-        await interaction.response.send_message("🔊 Conectando o bot na call, aguarde...", ephemeral=True)
-        try:
-            bot_voice = guild.voice_client
-            if bot_voice and bot_voice.channel.id == vc.id:
-                await asyncio.sleep(2)
-                if bot_voice.is_connected() and not bot_voice.is_playing():
-                    bot_voice.play(SilenceAudio())
-                await interaction.edit_original_response(content=f"✅ O bot já está na call {vc.mention}! (Áudio silencioso ativo)")
-                return
-            if bot_voice:
-                try: await bot_voice.disconnect(force=True)
-                except: pass
-                await asyncio.sleep(5)
-            voice_client = await vc.connect(timeout=20.0, reconnect=True, self_deaf=False)
-            await asyncio.sleep(8)
-            if voice_client and voice_client.is_connected():
-                try: await guild.me.edit(mute=True, deafen=True)
-                except: pass
-                await asyncio.sleep(1)
-                if not voice_client.is_playing(): voice_client.play(SilenceAudio())
-                await interaction.edit_original_response(content=f"✅ O bot entrou e foi mutado na call {vc.mention}! (Keep-alive 24/7 ativado)")
-            else:
-                await interaction.edit_original_response(content=f"⚠️ O handshake está em andamento. O bot tentará estabilizar automaticamente em até 60 segundos.")
-        except Exception as e:
-            await interaction.edit_original_response(content=f"❌ Erro: {e}. A task automática tentará reconectar em breve.")
-
+    def __init__(self): super().__init__(timeout=300)
+    @discord.ui.button(label="Total Membros", style=discord.ButtonStyle.primary)
+    async def b1(self, interaction, button): await interaction.response.send_message("Local:", view=ChannelSelectView("stats_cat_members", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Em Call", style=discord.ButtonStyle.primary)
+    async def b2(self, interaction, button): await interaction.response.send_message("Local:", view=ChannelSelectView("stats_cat_voice", discord.ChannelType.category), ephemeral=True)
+    @discord.ui.button(label="Canal Bot", style=discord.ButtonStyle.secondary)
+    async def b3(self, interaction, button): await interaction.response.send_message("Canal:", view=ChannelSelectView("stats_voice_channel", discord.ChannelType.voice), ephemeral=True)
 
 # === MODAIS ===
+class InstagramImageModal(discord.ui.Modal, title="Imagem do Instagram"):
+    def __init__(self):
+        super().__init__()
+        data = load_data()
+        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("instagram_image"), required=False)
+        self.add_item(self.img)
+    async def on_submit(self, interaction: discord.Interaction):
+        data = load_data(); data["instagram_image"] = self.img.value; save_data(data)
+        await interaction.response.send_message("✅ Imagem do Instagram salva!", ephemeral=True)
+
 class OverviewImageModal(discord.ui.Modal, title="Imagem do Overview"):
     def __init__(self):
         super().__init__()
         data = load_data()
         self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("overview_image"), required=False)
         self.add_item(self.img)
-    async def on_submit(self, interaction: discord.Interaction):
-        data = load_data()
-        data["overview_image"] = self.img.value
-        save_data(data)
-        await interaction.response.send_message("✅ Imagem do painel de moderação salva com sucesso!", ephemeral=True)
+    async def on_submit(self, interaction):
+        data = load_data(); data["overview_image"] = self.img.value; save_data(data)
+        await interaction.response.send_message("✅ Imagem salva!", ephemeral=True)
 
 class StaffImageModal(discord.ui.Modal, title="Imagem de Recrutamento"):
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("staff_image"), required=False)
+        self.img = discord.ui.TextInput(label="URL da Imagem", default=data.get("staff_image"), required=False)
         self.add_item(self.img)
-    async def on_submit(self, interaction: discord.Interaction):
-        data = load_data()
-        data["staff_image"] = self.img.value
-        save_data(data)
-        await interaction.response.send_message("✅ Imagem do painel de staff salva com sucesso!", ephemeral=True)
+    async def on_submit(self, interaction):
+        data = load_data(); data["staff_image"] = self.img.value; save_data(data)
+        await interaction.response.send_message("✅ Imagem salva!", ephemeral=True)
 
 class TellonymImageModal(discord.ui.Modal, title="Imagem do Tellonym"):
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.img = discord.ui.TextInput(label="URL da Imagem do Painel", default=data.get("tellonym_image"), required=False)
+        self.img = discord.ui.TextInput(label="URL da Imagem", default=data.get("tellonym_image"), required=False)
         self.add_item(self.img)
-    async def on_submit(self, interaction: discord.Interaction):
-        data = load_data()
-        data["tellonym_image"] = self.img.value
-        save_data(data)
-        await interaction.response.send_message("✅ Imagem do painel Tellonym salva com sucesso!", ephemeral=True)
+    async def on_submit(self, interaction):
+        data = load_data(); data["tellonym_image"] = self.img.value; save_data(data)
+        await interaction.response.send_message("✅ Imagem salva!", ephemeral=True)
 
 class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
     def __init__(self):
@@ -285,10 +234,8 @@ class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
         self.i3 = discord.ui.TextInput(label="Painel de Registro", default=data.get("reg_image"), required=False)
         self.i4 = discord.ui.TextInput(label="Painel de Ticket", default=data.get("ticket_image"), required=False)
         self.i5 = discord.ui.TextInput(label="Boas Vindas (Chat)", default=data.get("welcome_image"), required=False)
-        self.add_item(self.i1); self.add_item(self.i2); self.add_item(self.i3)
-        self.add_item(self.i4); self.add_item(self.i5)
-
-    async def on_submit(self, interaction: discord.Interaction):
+        self.add_item(self.i1); self.add_item(self.i2); self.add_item(self.i3); self.add_item(self.i4); self.add_item(self.i5)
+    async def on_submit(self, interaction):
         data = load_data()
         data["admin_image"] = self.i1.value; data["rules_image"] = self.i2.value; data["reg_image"] = self.i3.value
         data["ticket_image"] = self.i4.value; data["welcome_image"] = self.i5.value; save_data(data)
@@ -297,8 +244,7 @@ class ImagensModal(discord.ui.Modal, title="URLs das Imagens"):
 class TextoBoasVindasModal(discord.ui.Modal, title="Texto Boas-Vindas"):
     def __init__(self):
         super().__init__()
-        data = load_data()
-        self.txt = discord.ui.TextInput(label="Texto (use {user} para mencionar)", style=discord.TextStyle.paragraph, default=data.get("welcome_text"), required=False)
+        self.txt = discord.ui.TextInput(label="Texto", style=discord.TextStyle.paragraph, default=load_data().get("welcome_text"), required=False)
         self.add_item(self.txt)
     async def on_submit(self, interaction):
         data = load_data(); data["welcome_text"] = self.txt.value; save_data(data)
@@ -307,21 +253,20 @@ class TextoBoasVindasModal(discord.ui.Modal, title="Texto Boas-Vindas"):
 class RegrasTextModal(discord.ui.Modal, title="Escrever Regras"):
     def __init__(self):
         super().__init__()
-        data = load_data()
-        self.txt = discord.ui.TextInput(label="Regras do Servidor", style=discord.TextStyle.paragraph, default=data.get("rules_text"), max_length=4000)
+        self.txt = discord.ui.TextInput(label="Regras", style=discord.TextStyle.paragraph, default=load_data().get("rules_text"), max_length=4000)
         self.add_item(self.txt)
     async def on_submit(self, interaction):
         data = load_data(); data["rules_text"] = self.txt.value; save_data(data)
-        await interaction.response.send_message("✅ Regras salvas! Use o comando /painelregras no canal desejado para postar.", ephemeral=True)
+        await interaction.response.send_message("✅ Regras salvas!", ephemeral=True)
 
-class TicketNamesModal(discord.ui.Modal, title="Nomes dos Botões de Ticket"):
+class TicketNamesModal(discord.ui.Modal, title="Nomes Botões de Ticket"):
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.d1 = discord.ui.TextInput(label="Botão 1 (Denúncias)", default=data.get("ticket_name_denuncia"))
-        self.d2 = discord.ui.TextInput(label="Botão 2 (Parcerias)", default=data.get("ticket_name_parceria"))
-        self.d3 = discord.ui.TextInput(label="Botão 3 (Compras)", default=data.get("ticket_name_compra"))
-        self.d4 = discord.ui.TextInput(label="Botão 4 (Dúvidas)", default=data.get("ticket_name_duvida"))
+        self.d1 = discord.ui.TextInput(label="Denúncias", default=data.get("ticket_name_denuncia"))
+        self.d2 = discord.ui.TextInput(label="Parcerias", default=data.get("ticket_name_parceria"))
+        self.d3 = discord.ui.TextInput(label="Compras", default=data.get("ticket_name_compra"))
+        self.d4 = discord.ui.TextInput(label="Dúvidas", default=data.get("ticket_name_duvida"))
         self.add_item(self.d1); self.add_item(self.d2); self.add_item(self.d3); self.add_item(self.d4)
     async def on_submit(self, interaction):
         data = load_data()
@@ -329,34 +274,34 @@ class TicketNamesModal(discord.ui.Modal, title="Nomes dos Botões de Ticket"):
         data["ticket_name_compra"] = self.d3.value; data["ticket_name_duvida"] = self.d4.value
         save_data(data); await interaction.response.send_message("✅ Nomes salvos!", ephemeral=True)
 
-class BoosterConfigModal(discord.ui.Modal, title="⚙️ Configuração do Painel Booster"):
+class BoosterConfigModal(discord.ui.Modal, title="Configuração Booster"):
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.titulo = discord.ui.TextInput(label="Título", default=data.get("booster_title", "🚀 Booster · Impulsione o Servidor"), max_length=100)
-        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("booster_description", ""), max_length=4000, required=False)
-        self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("booster_image", ""), required=False)
-        self.label_botao = discord.ui.TextInput(label="Texto do Botão", default=data.get("booster_button_label", "⭐ Impulsionar Servidor"), max_length=80)
+        self.titulo = discord.ui.TextInput(label="Título", default=data.get("booster_title"), max_length=100)
+        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("booster_description"), required=False)
+        self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("booster_image"), required=False)
+        self.label_botao = discord.ui.TextInput(label="Texto do Botão", default=data.get("booster_button_label"))
         self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem); self.add_item(self.label_botao)
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction):
         data = load_data()
         data["booster_title"] = self.titulo.value; data["booster_description"] = self.descricao.value
         data["booster_image"] = self.imagem.value; data["booster_button_label"] = self.label_botao.value
-        save_data(data); await interaction.response.send_message("✅ Configurações do Painel Booster salvas!", ephemeral=True)
+        save_data(data); await interaction.response.send_message("✅ Salvo!", ephemeral=True)
 
-class ComandosConfigModal(discord.ui.Modal, title="⚙️ Configuração do Painel de Comandos"):
+class ComandosConfigModal(discord.ui.Modal, title="Configuração Comandos"):
     def __init__(self):
         super().__init__()
         data = load_data()
-        self.titulo = discord.ui.TextInput(label="Título do Painel", default=data.get("comandos_title", "📋 Comandos · Central do Servidor"), max_length=100)
-        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("comandos_description", ""), max_length=2000, required=False)
-        self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("comandos_image", ""), required=False)
+        self.titulo = discord.ui.TextInput(label="Título", default=data.get("comandos_title"), max_length=100)
+        self.descricao = discord.ui.TextInput(label="Descrição", style=discord.TextStyle.paragraph, default=data.get("comandos_description"), required=False)
+        self.imagem = discord.ui.TextInput(label="URL da Imagem", default=data.get("comandos_image"), required=False)
         self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.imagem)
-    async def on_submit(self, interaction: discord.Interaction):
+    async def on_submit(self, interaction):
         data = load_data()
         data["comandos_title"] = self.titulo.value; data["comandos_description"] = self.descricao.value
         data["comandos_image"] = self.imagem.value
-        save_data(data); await interaction.response.send_message("✅ Configurações do Painel de Comandos salvas!", ephemeral=True)
+        save_data(data); await interaction.response.send_message("✅ Salvo!", ephemeral=True)
 
 
 # === VIEWS GENÉRICAS ===
@@ -364,7 +309,7 @@ class SingleRoleSelectView(discord.ui.View):
     def __init__(self, config_key):
         super().__init__(timeout=300)
         self.config_key = config_key
-    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Escolha o cargo aqui...")
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Escolha o cargo...")
     async def callback(self, interaction, select):
         data = load_data(); data[self.config_key] = select.values[0].id; save_data(data)
         await interaction.response.edit_message(content=f"✅ Salvo: {select.values[0].mention}", view=None)
@@ -377,7 +322,7 @@ class ChannelSelectView(discord.ui.View):
 
 class ChannelSelectComponent(discord.ui.ChannelSelect):
     def __init__(self, config_key, channel_type):
-        super().__init__(placeholder="Escolha o canal/categoria...", channel_types=[channel_type])
+        super().__init__(placeholder="Escolha o canal...", channel_types=[channel_type])
         self.config_key = config_key
     async def callback(self, interaction):
         data = load_data(); data[self.config_key] = self.values[0].id; save_data(data)
@@ -385,27 +330,26 @@ class ChannelSelectComponent(discord.ui.ChannelSelect):
 
 class AddRegRoleView(discord.ui.View):
     def __init__(self): super().__init__(timeout=300)
-    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo para adicionar...")
+    @discord.ui.select(cls=discord.ui.RoleSelect, placeholder="Selecione o cargo...")
     async def callback(self, interaction, select):
         role = select.values[0]; data = load_data()
         if role.id not in data.get("available_roles", []):
             data.setdefault("available_roles", []).append(role.id); save_data(data)
             await interaction.response.edit_message(content=f"✅ Cargo {role.mention} adicionado!", view=None)
-        else: await interaction.response.edit_message(content="⚠️ O cargo já está na lista.", view=None)
+        else: await interaction.response.edit_message(content="⚠️ Já está na lista.", view=None)
 
 class RemoveRegRoleView(discord.ui.View):
     def __init__(self, options):
         super().__init__(timeout=300)
-        select = discord.ui.Select(placeholder="Selecione qual cargo remover...", options=options)
+        select = discord.ui.Select(placeholder="Remover cargo...", options=options)
         select.callback = self.select_callback
         self.add_item(select)
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction):
         role_id = int(interaction.data["values"][0]); data = load_data()
         if role_id in data.get("available_roles", []):
             data["available_roles"].remove(role_id); save_data(data)
-            await interaction.response.edit_message(content="✅ Cargo removido da lista de registro com sucesso!", view=None)
-        else:
-            await interaction.response.edit_message(content="❌ Erro: Este cargo não foi encontrado na lista.", view=None)
+            await interaction.response.edit_message(content="✅ Cargo removido!", view=None)
+        else: await interaction.response.edit_message(content="❌ Erro.", view=None)
 
 async def setup(bot):
     bot.add_view(AdminMainView()) 

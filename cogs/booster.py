@@ -1,5 +1,6 @@
 import discord
-from discord.ext import commandsfrom discord import app_commands
+from discord.ext import commands
+from discord import app_commands
 from database import load_data
 
 class BoosterCog(commands.Cog):
@@ -34,7 +35,7 @@ class BoosterCog(commands.Cog):
             )
         )
 
-        await interaction.channel.send(embed=embed, view=view)
+                await interaction.channel.send(embed=embed, view=view)
         await interaction.response.send_message("✅ Painel de Booster enviado com sucesso!", ephemeral=True)
 
 async def setup(bot):

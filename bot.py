@@ -5,7 +5,6 @@ import asyncio
 import sys
 import logging
 
-# Configura logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('discord_bot')
 
@@ -35,6 +34,7 @@ class MeuBot(commands.Bot):
             await self.load_extension("cogs.staff")
             await self.load_extension("cogs.tellonym")
             await self.load_extension("cogs.instagram")
+            await self.load_extension("cogs.verify") # <-- Extensão de verificação
             print("✅ Todas as extensões carregadas!", flush=True)
         except Exception as e:
             print(f"❌ Erro ao carregar extensões: {e}", flush=True)
@@ -45,7 +45,7 @@ class MeuBot(commands.Bot):
             print("✅ Comandos de barra sincronizados!", flush=True)
         except Exception as e:
             print(f"❌ Erro ao sincronizar comandos: {e}", flush=True)
-            logger.error(f"Erro ao sincronizar comandos: {e}")
+            logger.error(f"❌ Erro ao sincronizar comandos: {e}")
 
 bot = MeuBot()
 

@@ -75,7 +75,17 @@ def load_data():
             "mute_role_id": None,
             "castigo_role_id": None,
             "overview_image": "",
-            "overview_channel_id": None
+            "overview_channel_id": None,
+
+            "staff_channel_id": None,
+            "staff_category_id": None,
+            "staff_recruiter_role_id": None,
+            "staff_image": "",
+
+            # NOVAS CONFIGURAÇÕES DO PAINEL TELLONYM
+            "tellonym_channel_id": None,
+            "tellonym_send_channel_id": None,
+            "tellonym_image": ""
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
         return json.load(f)

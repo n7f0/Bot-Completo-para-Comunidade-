@@ -35,7 +35,7 @@ class ComandosPaginacaoView(discord.ui.View):
         
         comandos_por_pagina = [
             {
-                "titulo": "⚙️ Comandos de Administração",
+                "titulo": "⚙️ Administração",
                 "comandos": [
                     ("🔧 /paineladmin", "Envia o painel central de administração para configuração do servidor."),
                     ("📜 /painelregras", "Envia o painel com as regras do servidor."),
@@ -46,7 +46,7 @@ class ComandosPaginacaoView(discord.ui.View):
                 ]
             },
             {
-                "titulo": "📋 Comandos de Registro",
+                "titulo": "📋 Registro",
                 "comandos": [
                     ("🚀 Iniciar Registro", "Botão no painel de registro - Escolha sua idade (+16, +18, +25) e cargos extras."),
                     ("✅ Registro Concluído", "Confirmação automática após o registro ser finalizado com sucesso."),
@@ -54,7 +54,7 @@ class ComandosPaginacaoView(discord.ui.View):
                 ]
             },
             {
-                "titulo": "🎫 Comandos de Tickets",
+                "titulo": "🎫 Tickets",
                 "comandos": [
                     ("🚨 Denúncias", "Abre um ticket para reportar violações das regras ou membros."),
                     ("🤝 Parcerias", "Abre um ticket para solicitar parceria com o servidor."),
@@ -64,7 +64,7 @@ class ComandosPaginacaoView(discord.ui.View):
                 ]
             },
             {
-                "titulo": "📊 Comandos Utilitários",
+                "titulo": "📊 Utilitários",
                 "comandos": [
                     ("📊 Total de Membros", "Categoria que mostra o total de membros (atualizado automaticamente)."),
                     ("🔊 Pessoas em Call", "Categoria que mostra quantas pessoas estão em call (atualizado automaticamente)."),
@@ -80,23 +80,20 @@ class ComandosPaginacaoView(discord.ui.View):
 
         pagina = comandos_por_pagina[self.current_page]
 
-        embed = discord.Embed(
-            title=pagina["titulo"],
-            color=0xff0000
-        )
+        embed = discord.Embed(color=0xff0000)
+        desc_linhas = []
 
         if self.current_page == 0:
-            embed.title = data.get("comandos_title", "📋 Central de Comandos")
-            embed.description = data.get("comandos_description", "Abaixo estão todos os comandos disponíveis no servidor, organizados por categoria.")
+            embed.title = data.get("comandos_title", "📋 Comandos · Central do Servidor")
+            desc_linhas.append(data.get("comandos_description", "### 🔎 1 · Navegação\nAbaixo estão todos os comandos disponíveis no servidor.\n"))
         else:
-            embed.description = f"📌 **{pagina['titulo']}**\nAbaixo estão os comandos disponíveis nesta categoria."
+            embed.title = f"📌 {pagina['titulo']} · Página {self.current_page + 1}"
 
-        for cmd, desc in pagina["comandos"]:
-            embed.add_field(
-                name=cmd,
-                value=desc,
-                inline=False
-            )
+        # Formatação do Markdown igual a da imagem (### Emoji Número · Nome)
+        for i, (cmd, desc) in enumerate(pagina["comandos"], 1):
+            desc_linhas.append(f"### 🔹 {i} · {cmd}\n{desc}\n")
+
+        embed.description = "\n".join(desc_linhas)
 
         embed.set_footer(
             text=f"Página {self.current_page + 1}/{len(comandos_por_pagina)} • Use os botões abaixo para navegar"

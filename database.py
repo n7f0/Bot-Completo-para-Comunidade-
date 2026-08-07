@@ -86,9 +86,10 @@ def load_data():
             "tellonym_send_channel_id": None,
             "tellonym_image": "",
 
-            # NOVAS CONFIGURAÇÕES DO INSTAGRAM
+            # CONFIGURAÇÕES DO INSTAGRAM SEPARADAS POR GÊNERO
             "instagram_channel_id": None,
-            "instagram_post_channel_id": None,
+            "instagram_post_channel_masc": None,
+            "instagram_post_channel_fem": None,
             "instagram_image": ""
         }
     with open(DATA_FILE, "r", encoding="utf-8") as f:
